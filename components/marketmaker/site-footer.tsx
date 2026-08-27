@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { MarketMakerLogo } from './brand-icons'
 
 const columns = [
   {
@@ -26,9 +27,7 @@ export function SiteFooter() {
         <div className="grid grid-cols-2 gap-10 md:grid-cols-6">
           <div className="col-span-2">
             <Link href="/" className="flex items-center gap-2">
-              <span className="flex size-6 items-center justify-center rounded bg-foreground font-mono text-xs font-bold text-background">
-                M
-              </span>
+              <MarketMakerLogo className="size-7 text-primary" />
               <span className="font-mono text-sm font-medium tracking-tight text-foreground">
                 marketmaker.ai
               </span>

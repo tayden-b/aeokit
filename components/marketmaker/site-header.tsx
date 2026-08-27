@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { ChevronDown, Layers } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   LinkedInIcon,
@@ -11,6 +11,7 @@ import {
   InstagramIcon,
   YouTubeIcon,
   FacebookIcon,
+  MarketMakerLogo,
 } from './brand-icons'
 
 const sourceLinks = [
@@ -34,7 +35,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:px-10">
       <Link href="/" className="flex items-center gap-2 text-[15px] font-semibold tracking-tight">
-        <Layers className="size-5" strokeWidth={2.25} aria-hidden="true" />
+        <MarketMakerLogo className="size-7 text-primary" />
         marketmaker.ai
       </Link>
 
