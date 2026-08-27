@@ -20,6 +20,21 @@ from dotenv import load_dotenv
 
 from llm_util import call_with_retries
 
+
+def _resolve_redirect(url: str, timeout: float = 3.0) -> str:
+    """Follow grounding-API redirect wrappers to the real source URL; keep the
+    wrapper on any failure (an opaque true source beats a dropped one)."""
+    if "grounding-api-redirect" not in url:
+        return url
+    import urllib.request
+
+    try:
+        req = urllib.request.Request(url, method="HEAD")
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.url or url
+    except Exception:
+        return url
+
 load_dotenv()
 
 TEMPERATURE = 0.7
@@ -135,7 +150,7 @@ def _ask_gemini(key: str, model: str, prompt: str) -> EngineAnswer:
             for chunk in getattr(meta, "grounding_chunks", None) or []:
                 uri = getattr(getattr(chunk, "web", None), "uri", None)
                 if uri:
-                    citations.append(uri)
+                    citations.append(_resolve_redirect(uri))
         except (AttributeError, IndexError):
             pass
         return EngineAnswer(resp.text, model, "grounded", citations)

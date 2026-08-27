@@ -317,6 +317,209 @@ def request_measurement(target: str, context: str = "") -> dict:
     }
 
 
+
+@server.tool()
+def compare(product_a: str, product_b: str) -> dict:
+    """Head-to-head: two products across every capability both could appear in —
+    who wins where, per engine. For 'how do we stack up against <competitor> in AI answers?'"""
+    conn = _conn()
+    known = _known_products(conn)
+    a, sug_a = _match(product_a, known)
+    b, sug_b = _match(product_b, known)
+    if not a or not b:
+        conn.close()
+        return {"found": False,
+                "missing": [{"asked_for": p, "close_matches": s} for p, m, s in
+                            [(product_a, a, sug_a), (product_b, b, sug_b)] if not m]}
+    rows_out, a_wins, b_wins = [], 0, 0
+    for (cat, capability, engine), rows in sorted(_latest_shares(conn).items()):
+        if engine == "blended":
+            continue
+        ra = next((i + 1 for i, r in enumerate(rows) if r["product"] == a), None)
+        rb = next((i + 1 for i, r in enumerate(rows) if r["product"] == b), None)
+        if ra is None and rb is None:
+            continue
+        winner = a if (rb is None or (ra is not None and ra < rb)) else b
+        a_wins += winner == a
+        b_wins += winner == b
+        rows_out.append({"capability": capability, "engine": engine,
+                         a: {"rank": ra}, b: {"rank": rb}, "winner": winner})
+    method = _method_block(conn)
+    conn.close()
+    return {"found": True, "products": [a, b],
+            "scoreboard": {a: a_wins, b: b_wins},
+            "battlegrounds": rows_out,
+            "method": method}
+
+
+@server.tool()
+def trend(capability: str, product: str | None = None) -> dict:
+    """How routing share is changing over time for a capability (optionally one
+    product) — the measured drift across collection dates. For 'are we gaining or
+    losing ground in AI answers?' Trends need 3+ collection dates to mean much."""
+    conn = _conn()
+    known = [r[0] for r in conn.execute("SELECT DISTINCT capability FROM runs")]
+    match, suggestions = _match(capability, known)
+    if not match:
+        conn.close()
+        return {"found": False, "asked_for": capability, "close_matches": suggestions}
+    q = ("SELECT run_date, product, routing_share, n_samples FROM rollups "
+         "WHERE capability = ? AND engine = 'blended' ORDER BY run_date")
+    series: dict[str, list] = {}
+    for r in conn.execute(q, (match,)):
+        if product and normalize(product).lower() not in r["product"].lower():
+            continue
+        series.setdefault(r["product"], []).append(
+            {"date": r["run_date"], "share": r["routing_share"], "n": r["n_samples"]})
+    dates = db.distinct_run_dates(conn)
+    method = _method_block(conn)
+    conn.close()
+    caveat = None
+    if len(dates) < 3:
+        caveat = (f"only {len(dates)} collection date(s) so far — no trend claim is defensible yet "
+                  "(SPEC.md drift rules require 3+ dates and a significance test); this shows raw movement only")
+    return {"found": True, "capability": match, "series": series,
+            "collection_dates": dates, "caveats": caveat, "method": method}
+
+
+@server.tool()
+def sources(capability: str, engine: str | None = None) -> dict:
+    """Which web sources the engines actually cited when answering a capability —
+    the supply chain behind the AI's answer, ranked by citation count. THE
+    actionable tool: these are the pages that shape who gets recommended, i.e.
+    where AEO content effort should go."""
+    from urllib.parse import urlparse
+    conn = _conn()
+    known = [r[0] for r in conn.execute("SELECT DISTINCT capability FROM runs")]
+    match, suggestions = _match(capability, known)
+    if not match:
+        conn.close()
+        return {"found": False, "asked_for": capability, "close_matches": suggestions}
+    q = ("SELECT r.engine, c.url FROM citations c JOIN runs r ON c.run_id = r.id "
+         "WHERE r.capability = ?")
+    args = [match]
+    if engine:
+        q += " AND r.engine = ?"
+        args.append(engine)
+    by_engine: dict[str, dict] = {}
+    unresolved = 0
+    for row in conn.execute(q, args):
+        url = row["url"]
+        domain = urlparse(url).netloc
+        if "vertexaisearch" in domain:
+            unresolved += 1
+            continue
+        e = by_engine.setdefault(row["engine"], {})
+        d = e.setdefault(domain, {"citations": 0, "example": url})
+        d["citations"] += 1
+    method = _method_block(conn)
+    conn.close()
+    out = {eng: sorted(({"domain": d, **v} for d, v in domains.items()),
+                       key=lambda x: -x["citations"])[:12]
+           for eng, domains in by_engine.items()}
+    caveats = []
+    if unresolved:
+        caveats.append(f"{unresolved} Gemini citations are unresolved redirect wrappers from early "
+                       "collection runs (domains unknown); newer runs resolve to real domains")
+    if not out:
+        caveats.append("no resolvable citations for this capability yet — grounded engines "
+                       "don't always cite, and only some collection runs are grounded")
+    return {"found": True, "capability": match, "sources_by_engine": out,
+            "caveats": caveats or None, "method": method}
+
+
+@server.tool()
+def probe_capability(capability: str, engines_list: str = "openai,gemini", samples: int = 1) -> dict:
+    """Measure a capability LIVE, right now: runs the capability's versioned prompt
+    against live engines (max 2 samples each, hard-capped) and returns fresh
+    extractions alongside the corpus baseline. Slow (20-60s) and spends real API
+    calls — use for 'check this right now', not for browsing; corpus tools are
+    instant and better-sampled."""
+    from engines import ask, available_engines
+    from extract import extract as judge
+    from prompts import PROMPT_SETS
+    samples = max(1, min(2, samples))
+    match = None
+    for cat, caps in PROMPT_SETS.items():
+        for cap in caps:
+            if capability.lower() in cap.lower() or cap.lower() in capability.lower():
+                match, category = cap, cat
+                break
+    if not match:
+        return {"found": False, "asked_for": capability,
+                "advice": "live probes run only the versioned prompt set (spec §3) — ad-hoc phrasings "
+                          "would be unversioned noise. See `coverage` for measurable capabilities, "
+                          "or `request_measurement` to propose a new one."}
+    variant = PROMPT_SETS[category][match][0]
+    engines_avail = available_engines()
+    use = [e for e in engines_list.split(",") if e in engines_avail][:2]
+    if not use:
+        return {"found": False, "error": f"no requested engine has a key; available: {engines_avail}"}
+    results = []
+    calls = 0
+    for eng in use:
+        for _ in range(samples):
+            if calls >= 4:
+                break
+            ans = ask(eng, variant["prompt"])
+            calls += 1
+            ext = judge(ans.text)
+            results.append({
+                "engine": eng, "grounding_mode": ans.grounding_mode,
+                "products": [{"name": p.name, "role": p.role, "position": p.position,
+                              "sentiment": p.sentiment} for p in ext.products],
+                "citations": ans.citations[:5],
+            })
+    baseline = capability_ranking(match)
+    return {"found": True, "capability": match, "live_runs": results,
+            "engine_calls_spent": calls,
+            "corpus_baseline": {"leaders_by_engine": baseline.get("leaders_by_engine"),
+                                "engines_disagree": baseline.get("engines_disagree")},
+            "caveats": f"live probe is n={samples} per engine — a glimpse, not a measurement; "
+                       "the corpus baseline above is the defensible number. Probe results are NOT "
+                       "added to the versioned corpus."}
+
+
+# --- packaged workflows (the .SKILL analog, as native MCP prompts) ---
+
+@server.prompt(title="AEO Audit")
+def aeo_audit(product: str) -> str:
+    """Full audit of one product's standing in AI answers — ranked report with actions."""
+    return f"""Run a full AEO audit for "{product}" using marketmaker tools, in this order:
+1. `coverage` — confirm what's measured and note total sample sizes.
+2. `product_report` on "{product}" — standings per capability per engine.
+3. `whats_said` on "{product}" — how engines describe it when they mention it.
+4. `sources` for each capability where the product ranks below #2 — the pages shaping those answers.
+5. `trend` for its strongest and weakest capability.
+
+Then write the audit as a report with these sections:
+- **Where you stand** — rank table (capability x engine), leaders named.
+- **Where you're invisible** — capabilities/engines with zero mentions (this is the headline if non-empty).
+- **What the engines say** — attributes + sentiment, verbatim-ish.
+- **The supply chain** — which domains the engines cite for your weak capabilities; these are the
+  concrete AEO targets (get present on those pages/formats).
+- **Method & confidence** — relay every caveat and sample size honestly; if n is small, say the
+  report is directional. Never present a thin number as settled.
+Close with the 3 highest-leverage actions, each tied to a specific measured gap."""
+
+
+@server.prompt(title="Category Snapshot")
+def category_snapshot(category: str) -> str:
+    """Cross-engine ownership map of one category — who wins what, where engines disagree."""
+    return f"""Build a category snapshot for "{category}" using marketmaker tools:
+1. `coverage` — list this category's measured capabilities and sample sizes.
+2. `capability_ranking` for EACH capability — collect leaders, distributions, disagreement flags.
+3. `sources` for the 2-3 most contested capabilities.
+
+Write the snapshot:
+- **Ownership map** — per capability: leader per engine, share, confidence interval.
+- **Where engines disagree** — capabilities with different winners per engine, and what that means
+  (buyers hear different answers depending on where they ask).
+- **Open ground** — capabilities with no dominant winner (share leaders under ~50%): the openings.
+- **The citation supply chain** — domains shaping contested answers.
+- **Method & confidence** — sample sizes, dates, caveats, spec version, plainly stated."""
+
+
 if __name__ == "__main__":
     if "--http" in sys.argv:
         server.run(transport="streamable-http")
