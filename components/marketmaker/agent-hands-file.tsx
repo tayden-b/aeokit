@@ -17,10 +17,10 @@ export function AgentHandsFile() {
           <p className="mt-5 text-pretty text-base leading-relaxed text-muted-foreground">Not a generic SEO score. A measured view of how answer engines see your market right now, with the evidence behind every claim.</p>
           <div className="mt-8 flex flex-col gap-4">
             {[
-              [BarChart3, 'Where you appear', 'How often engines name you, by engine and by question — always as a count, never a score.'],
+              [BarChart3, 'Where you appear', 'How often engines name you, by engine and by question, always as a count, never a score.'],
               [Globe2, 'Competitor map', 'Who is recommended instead, and where they beat you.'],
               [FileText, 'Answer language', 'The exact positioning, strengths, and objections AI repeats.'],
-              [AlertTriangle, 'Source gap', 'The sites shaping answers — and where you are absent.'],
+              [AlertTriangle, 'Source gap', 'The sites shaping answers, and where you are absent.'],
             ].map(([Icon, title, body]) => <div key={String(title)} className="flex gap-3"><span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted"><Icon className="size-4 text-brand" /></span><div><h3 className="text-sm font-medium">{title as string}</h3><p className="mt-1 text-sm leading-relaxed text-muted-foreground">{body as string}</p></div></div>)}
           </div>
         </div>

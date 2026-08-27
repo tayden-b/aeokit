@@ -14,7 +14,7 @@ export function ReadsTheWeb() {
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
           <div><p className="font-mono text-xs font-medium tracking-widest text-brand">INSIDE THE TOOL CALL</p><h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">How a live probe works.</h2></div>
-          <p className="max-w-md text-sm leading-relaxed text-muted-foreground">Your agent invokes one MCP tool. marketmaker does the measurement work and returns evidence—not another interface.</p>
+          <p className="max-w-md text-sm leading-relaxed text-muted-foreground">Your agent invokes one MCP tool. marketmaker does the measurement work and returns evidence, not another interface.</p>
         </div>
 
         <div className="mt-12 overflow-hidden rounded-2xl border border-border bg-muted p-3 sm:p-5">

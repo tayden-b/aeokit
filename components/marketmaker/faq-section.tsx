@@ -8,7 +8,7 @@ import {
 const faqs = [
   {
     q: 'What exactly is marketmaker.ai?',
-    a: "marketmaker.ai is an AI agent that reads the live commercial web — company sites, filings, job boards, news, and social signal — and turns a plain-language brief into a structured, sourced prospect list your team can act on immediately.",
+    a: "marketmaker.ai is an AI agent that reads the live commercial web, company sites, filings, job boards, news, and social signal, and turns a plain-language brief into a structured, sourced prospect list your team can act on immediately.",
   },
   {
     q: 'Do I need to sign a contract or buy seats?',
@@ -24,7 +24,7 @@ const faqs = [
   },
   {
     q: 'What does my agent hand back?',
-    a: 'A structured, sourced deliverable — a ranked account list, an enriched CSV, or a CRM-ready payload — with citations back to the original source for every data point, so nothing is a black box.',
+    a: 'A structured, sourced deliverable, a ranked account list, an enriched CSV, or a CRM-ready payload, with citations back to the original source for every data point, so nothing is a black box.',
   },
   {
     q: 'Is my data and usage secure?',
