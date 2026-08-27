@@ -32,19 +32,10 @@ export function HeroSection() {
           <Wrench className="size-3.5" aria-hidden="true" /> MCP-FIRST TOOL FOR AI AGENTS
         </p>
         <h1 className="mt-6 text-balance text-4xl font-semibold leading-[1.06] tracking-tight sm:text-6xl">
-          Give your agent one tool to measure what{' '}
-          <span className="relative inline-grid min-w-[5.9em] text-left text-brand" aria-live="polite">
-            {engines.map((name, index) => (
-              <span
-                key={name}
-                className={`col-start-1 row-start-1 transition-all duration-500 ${index === engine ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0'}`}
-                aria-hidden={index !== engine}
-              >
-                {name}
-              </span>
-            ))}
+          Give your agent one tool to measure
+          <span className="mt-1 block sm:mt-2">
+            what <span className="text-brand" aria-live="polite">{engines[engine]}</span> recommends.
           </span>
-          {' '}recommends.
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground">
           marketmaker is an MCP tool your existing agent calls to run live, repeatable probes across answer engines. No dashboard to monitor. No new workflow to learn.
