@@ -1,119 +1,84 @@
-'use client'
+import { Bot, Check, FileSearch, Radar, SearchCheck } from 'lucide-react'
 
-import { useState } from 'react'
-import { Search, BookOpen, ShieldCheck, Layers } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import {
-  LinkedInIcon,
-  XIcon,
-  InstagramIcon,
-  TikTokIcon,
-  YouTubeIcon,
-  FacebookIcon,
-  GoogleIcon,
-} from './brand-icons'
-import { Globe } from 'lucide-react'
-
-const items = [
-  {
-    key: 'agent',
-    title: 'Your agent',
-    body: 'Claude, ChatGPT, Cursor, or Gemini. One link connects it. No API key, no scraper, nothing to install.',
-  },
-  {
-    key: 'tools',
-    title: 'Live tools',
-    body: 'Search finds people, companies, posts, ads, and pages. Read opens the profile, post, comment thread, or page. Verify confirms the current role and finds a work email and phone.',
-  },
-  {
-    key: 'web',
-    title: 'Live web',
-    body: 'marketmaker.ai reads LinkedIn, X, Instagram, TikTok, YouTube, Facebook, the ad libraries, and the open web at the moment your agent asks. Every row links back to the page it came from.',
-  },
+const steps = [
+  { icon: Bot, title: 'Ask from your agent', body: 'Describe what you sell and who buys it. Your agent passes that context to marketmaker. No dashboard, tracking code, or site changes.' },
+  { icon: Radar, title: 'We ask the engines live', body: 'marketmaker writes the questions your buyers would actually ask, then samples the real engines repeatedly because one answer is noise.' },
+  { icon: SearchCheck, title: 'Your agent gets the evidence', body: 'Rankings, competitors, exact answer language, and the websites shaping those answers return to the conversation where you started.' },
 ]
 
-export function ReadsTheWeb() {
-  const [active, setActive] = useState('web')
+const engines = ['ChatGPT', 'Gemini', 'Claude', 'Perplexity']
 
+export function ReadsTheWeb() {
   return (
-    <section className="border-b border-border bg-background px-6 py-20 lg:py-28">
-      <div className="mx-auto grid max-w-6xl gap-14 lg:grid-cols-2 lg:items-center lg:gap-20">
-        <div className="relative overflow-hidden rounded-2xl border border-border bg-muted p-10">
-          <div className="flex flex-col items-center gap-6">
-            <div className="flex flex-wrap justify-center gap-2 rounded-2xl border border-border bg-card p-3 shadow-sm">
-              {['✳️ Claude', '⬤ ChatGPT', '▷ Cursor', '✦ Gemini'].map((label) => (
-                <span
-                  key={label}
-                  className="rounded-full border border-border bg-background px-3 py-1.5 text-sm"
-                >
-                  {label}
+    <section id="how-it-works" className="border-b border-border bg-background px-6 py-24">
+      <div className="mx-auto max-w-6xl">
+        <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">How a live probe works.</h2>
+
+        <div className="mt-12 overflow-hidden rounded-2xl border border-border bg-muted p-3 sm:p-5">
+          <div className="grid overflow-hidden rounded-xl border border-border bg-card lg:grid-cols-[1fr_auto_1.15fr_auto_1fr] lg:items-stretch">
+            <div className="flex flex-col justify-between gap-8 p-5 sm:p-7">
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                <Bot className="size-4" aria-hidden="true" /> Your agent
+              </div>
+              <div className="flex flex-col gap-3">
+                <p className="text-sm leading-relaxed">Project management for small teams. Do AI assistants recommend us?</p>
+                <span className="w-fit rounded-full border border-border px-2.5 py-1 font-mono text-[11px] text-muted-foreground">1 product brief</span>
+              </div>
+            </div>
+
+            <div className="hidden w-px bg-border lg:block" aria-hidden="true" />
+            <div className="flex flex-col gap-5 border-y border-border p-5 sm:p-7 lg:border-y-0">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  <Radar className="size-4" aria-hidden="true" /> Live sampling
+                </div>
+                <span className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground">
+                  <span className="size-1.5 rounded-full bg-brand" aria-hidden="true" /> Running
                 </span>
-              ))}
+              </div>
+              <div className="flex flex-col gap-2">
+                {engines.map((engine, index) => (
+                  <div key={engine} className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2.5">
+                    <span className="font-mono text-xs">{engine}</span>
+                    <span className="flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
+                      {index === 0 ? '24 / 24' : index === 1 ? '24 / 24' : index === 2 ? '20 / 24' : '18 / 24'}
+                      {index < 2 && <Check className="size-3.5 text-brand" aria-label="Complete" />}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap justify-center gap-2 rounded-2xl border border-border bg-card p-3 shadow-sm">
-              {[
-                { icon: Search, label: 'Search' },
-                { icon: BookOpen, label: 'Read' },
-                { icon: ShieldCheck, label: 'Verify' },
-              ].map(({ icon: Icon, label }) => (
-                <span
-                  key={label}
-                  className="flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm"
-                >
-                  <Icon className="size-3.5" aria-hidden="true" />
-                  {label}
-                </span>
-              ))}
-            </div>
-            <div className="flex items-center gap-1.5 rounded-full border-2 border-brand bg-card px-4 py-2 text-sm font-medium shadow-sm">
-              <Layers className="size-4" aria-hidden="true" />
-              marketmaker.ai live web
-            </div>
-            <div className="flex flex-wrap justify-center gap-4 pt-2 text-muted-foreground">
-              {[LinkedInIcon, XIcon, InstagramIcon, TikTokIcon, YouTubeIcon, FacebookIcon, GoogleIcon, Globe].map(
-                (Icon, i) => (
-                  <Icon key={i} className="size-4" aria-hidden="true" />
-                ),
-              )}
+
+            <div className="hidden w-px bg-border lg:block" aria-hidden="true" />
+            <div className="flex flex-col justify-between gap-8 p-5 sm:p-7">
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                <FileSearch className="size-4" aria-hidden="true" /> Evidence report
+              </div>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-end justify-between gap-4 border-b border-border pb-3">
+                  <span className="text-sm text-muted-foreground">Named in</span>
+                  <strong className="font-mono text-2xl font-medium tabular-nums">3 of 20</strong>
+                </div>
+                <div className="flex items-center justify-between gap-4 text-xs text-muted-foreground">
+                  <span>Rankings · citations · competitors</span>
+                  <Check className="size-4 text-brand" aria-label="Report ready" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div>
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Reads the web, live.</h2>
-          <p className="mt-4 text-pretty text-[15px] leading-relaxed text-muted-foreground">
-            marketmaker.ai gives your agent the public web at answer time: profiles, posts, comments, ads, and
-            company pages. Your agent asks, marketmaker.ai opens the page, and the answer comes back with the
-            link.
-          </p>
-
-          <div className="mt-8 space-y-1">
-            {items.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => setActive(item.key)}
-                className={cn(
-                  'flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition-colors',
-                  active === item.key ? 'border-brand bg-muted' : 'border-transparent hover:bg-muted/60',
-                )}
-              >
-                <span
-                  className={cn(
-                    'mt-1 size-3.5 shrink-0 rounded-sm border',
-                    active === item.key ? 'border-brand bg-brand' : 'border-muted-foreground/40',
-                  )}
-                  aria-hidden="true"
-                />
-                <span>
-                  <span className="block font-medium">{item.title}</span>
-                  {active === item.key && (
-                    <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{item.body}</span>
-                  )}
-                </span>
-              </button>
-            ))}
-          </div>
+        <div className="mt-10 grid gap-8 md:grid-cols-3">
+          {steps.map(({ icon: Icon, title, body }, index) => (
+            <article key={title} className="group border-t border-border pt-5 transition-transform duration-200 ease-out hover:-translate-y-0.5">
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-xs text-muted-foreground">0{index + 1}</span>
+                <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
+              </div>
+              <h3 className="mt-4 text-lg font-medium">{title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p>
+            </article>
+          ))}
         </div>
       </div>
     </section>

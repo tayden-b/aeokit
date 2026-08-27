@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'marketmaker.ai — Run your prospecting on autopilot',
+  title: 'marketmaker.ai | Live answer-engine measurement for your agent',
   description:
-    'No seats. No contracts. Pay as you go, and only for results. marketmaker.ai gives your AI agent live access to the commercial web.',
+    'An MCP-first tool that gives AI agents live, repeatable measurements of what answer engines recommend, who wins, and which sources shape the result.',
   generator: 'v0.app',
   icons: {
     icon: [
