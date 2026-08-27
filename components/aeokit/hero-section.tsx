@@ -48,10 +48,10 @@ export function HeroSection() {
           Give your agent aeokit. It asks the real engines your buyers&apos; real questions, many times over, then returns exactly where you stand.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Button size="lg" className="rounded-full px-6" render={<a href="#get-started">Add to your agent</a>} />
+          <Button size="lg" className="rounded-full px-6" render={<a href="/setup">Add to your agent</a>} />
           <Button size="lg" variant="ghost" className="rounded-full px-5" render={<a href="#live-probe">See a live probe <ArrowUpRight data-icon="inline-end" /></a>} />
         </div>
-        <p className="mt-4 font-mono text-xs text-muted-foreground">First probe free · MCP-first · API available</p>
+        <p className="mt-4 font-mono text-xs text-muted-foreground">Runs on your own API keys · MCP-first · open source</p>
       </div>
 
       <div id="live-probe" className="mx-auto max-w-3xl px-4 pb-3">
