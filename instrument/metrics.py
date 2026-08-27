@@ -57,6 +57,11 @@ def routing_share(extractions: list) -> dict:
 
     Returns a dict keyed by canonical product name with:
       - routing_share: fraction of samples where this product was PRIMARY
+                       (NOTE: when an answer tags several products 'primary',
+                        this credits the earliest-positioned one — i.e. for
+                        multi-primary answers it measures ordinal position, not
+                        a sole recommendation. Use sole_rate for the strict read.)
+      - sole_rate:     fraction of samples where this product was the ONLY primary
       - mention_rate:  fraction of samples that mentioned it at all
       - avg_position:  average 1-based position when mentioned (lower = better)
       - sentiment:     {positive, neutral, negative} counts

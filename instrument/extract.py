@@ -19,6 +19,7 @@ from typing import Literal
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
+import keys
 from llm_util import call_with_retries
 
 load_dotenv()
@@ -79,7 +80,7 @@ def _extract_gemini(answer_text: str) -> Extraction:
     from google import genai
     from google.genai import types
 
-    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    client = genai.Client(api_key=keys.resolve("gemini").key)
     resp = call_with_retries(lambda: client.models.generate_content(
         model=GEMINI_EXTRACT_MODEL,
         contents=f"{EXTRACTION_SYSTEM}\n\nANSWER TO ANALYZE:\n{answer_text}",
@@ -94,7 +95,7 @@ def _extract_gemini(answer_text: str) -> Extraction:
 def _extract_openai(answer_text: str) -> Extraction:
     from openai import OpenAI
 
-    client = OpenAI()
+    client = OpenAI(api_key=_openai_key())
     completion = call_with_retries(lambda: client.chat.completions.parse(
         model=OPENAI_EXTRACT_MODEL,
         messages=[
@@ -106,11 +107,20 @@ def _extract_openai(answer_text: str) -> Extraction:
     return completion.choices[0].message.parsed
 
 
+def _openai_key() -> str:
+    ks = keys.resolve("openai")
+    if not ks:
+        raise RuntimeError("Judge extraction needs an OpenAI key (user or house).")
+    return ks.key
+
+
 def extract(answer_text: str) -> Extraction:
     """Run structured extraction: OpenAI (fast/cheap) by default, else Gemini."""
-    if os.getenv("OPENAI_API_KEY"):
+    if keys.resolve("openai"):
         return _extract_openai(answer_text)
-    return _extract_gemini(answer_text)
+    if keys.resolve("gemini"):
+        return _extract_gemini(answer_text)
+    raise RuntimeError("Judge extraction needs an OpenAI or Gemini key.")
 
 
 if __name__ == "__main__":

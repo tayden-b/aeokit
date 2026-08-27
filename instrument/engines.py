@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 
 from dotenv import load_dotenv
 
+import keys
 from llm_util import call_with_retries
 
 
@@ -67,18 +68,24 @@ class EngineAnswer:
     model: str
     grounding_mode: str            # 'web_search' | 'grounded' | 'native' | 'none'
     citations: list[str] = field(default_factory=list)
+    key_source: str = "house"      # 'user' | 'house' — whose credits paid for this call
 
 
 def available_engines() -> list[str]:
-    return [name for name, cfg in ENGINES.items() if os.getenv(cfg["env"])]
+    """Single source of truth: an engine is available iff keys.resolve() finds a key."""
+    return keys.available()
 
 
 def ask(engine: str, prompt: str) -> EngineAnswer:
+    """Ask one engine. Key comes from keys.resolve() so BYOK actually applies here —
+    reading os.environ directly (the old path) silently ignored user keys."""
     cfg = ENGINES[engine]
-    key = os.getenv(cfg["env"])
-    if not key:
-        raise RuntimeError(f"No API key for engine '{engine}' ({cfg['env']}).")
-    return _ASK[engine](key, cfg["model"], prompt)
+    ks = keys.resolve(engine)
+    if not ks:
+        raise RuntimeError(f"No API key for engine '{engine}' (user or house).")
+    answer = _ASK[engine](ks.key, cfg["model"], prompt)
+    answer.key_source = ks.source
+    return answer
 
 
 def _ask_openai(key: str, model: str, prompt: str) -> EngineAnswer:

@@ -1,5 +1,7 @@
 .venv/
 .env
 marketmaker.db
+spend.db
 exports/
 __pycache__/
+*.pyc

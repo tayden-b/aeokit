@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS runs (
     variant        TEXT NOT NULL,     -- prompt variant id within the set
     prompt         TEXT NOT NULL,
     spec_version   TEXT NOT NULL,
+    run_class      TEXT NOT NULL DEFAULT 'spec',   -- 'spec' (reference corpus) | 'probe' (live, user-requested)
+    session_id     TEXT,                            -- probe session this run belongs to
     raw_answer     TEXT
 );
 CREATE TABLE IF NOT EXISTS routings (
@@ -69,7 +71,22 @@ CREATE TABLE IF NOT EXISTS rollups (
     spec_version   TEXT NOT NULL,
     PRIMARY KEY (run_date, engine, category, capability, product)
 );
+CREATE TABLE IF NOT EXISTS probe_sessions (
+    id            TEXT PRIMARY KEY,
+    ts            TEXT NOT NULL,
+    product       TEXT NOT NULL,
+    description   TEXT,
+    category      TEXT,
+    questions     TEXT,        -- JSON: the derived/used question set
+    derivation    TEXT,        -- 'derived' | 'spec-set'
+    engines       TEXT,
+    samples_each  INTEGER,
+    calls         INTEGER,
+    est_usd       REAL,
+    key_source    TEXT         -- 'user' | 'house' | 'mixed'
+);
 CREATE INDEX IF NOT EXISTS idx_runs_lookup ON runs (category, capability, engine, run_date);
+CREATE INDEX IF NOT EXISTS idx_runs_session ON runs (session_id);
 CREATE INDEX IF NOT EXISTS idx_rollups_lookup ON rollups (category, capability, run_date);
 """
 
@@ -89,15 +106,24 @@ def init_db(conn: sqlite3.Connection) -> None:
 
 def insert_run(conn, *, ts, run_date, engine, model, grounding_mode, temperature,
                category, capability, prompt_set, variant, prompt, spec_version,
-               raw_answer) -> int:
+               raw_answer, run_class="spec", session_id=None) -> int:
     cur = conn.execute(
         "INSERT INTO runs (ts, run_date, engine, model, grounding_mode, temperature,"
-        " category, capability, prompt_set, variant, prompt, spec_version, raw_answer)"
-        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        " category, capability, prompt_set, variant, prompt, spec_version, raw_answer,"
+        " run_class, session_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (ts, run_date, engine, model, grounding_mode, temperature, category,
-         capability, prompt_set, variant, prompt, spec_version, raw_answer),
+         capability, prompt_set, variant, prompt, spec_version, raw_answer,
+         run_class, session_id),
     )
     return cur.lastrowid
+
+
+def insert_probe_session(conn, row: dict) -> None:
+    conn.execute(
+        "INSERT OR REPLACE INTO probe_sessions (id, ts, product, description, category,"
+        " questions, derivation, engines, samples_each, calls, est_usd, key_source)"
+        " VALUES (:id, :ts, :product, :description, :category, :questions, :derivation,"
+        " :engines, :samples_each, :calls, :est_usd, :key_source)", row)
 
 
 def insert_routing(conn, *, run_id, product, role, position, sentiment,
