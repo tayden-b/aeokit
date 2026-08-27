@@ -5,3 +5,6 @@ spend.db
 exports/
 __pycache__/
 *.pyc
+dist/
+build/
+*.egg-info/
