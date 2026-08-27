@@ -23,11 +23,9 @@ const sourceLinks = [
 ]
 
 const navLinks = [
-  { label: 'Skills', href: '#skills' },
-  { label: 'Pricing', href: '#pricing' },
-  { label: 'Docs', href: '#' },
-  { label: "Who it's for", href: '#who-its-for' },
-  { label: 'About', href: '#' },
+  { label: 'How it works', href: '#how-it-works' },
+  { label: 'Report', href: '#report' },
+  { label: 'Live probe', href: '#live-probe' },
 ]
 
 export function SiteHeader() {
@@ -75,7 +73,7 @@ export function SiteHeader() {
             </div>
           )}
         </div>
-        {navLinks.slice(1).map((link) => (
+        {navLinks.map((link) => (
           <Link key={link.label} href={link.href} className="transition-colors hover:text-foreground">
             {link.label}
           </Link>
