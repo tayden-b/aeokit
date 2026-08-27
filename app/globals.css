@@ -130,3 +130,71 @@
     @apply bg-background text-foreground;
   }
 }
+
+.hero-difference-field {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--brand);
+  mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+}
+
+.hero-difference-field__layer {
+  position: absolute;
+  top: 2rem;
+  right: -9rem;
+  width: min(52rem, 72vw);
+  aspect-ratio: 1;
+  opacity: 0.14;
+  background-image: radial-gradient(circle, currentColor 1.25px, transparent 1.5px);
+  background-size: 13px 13px;
+  mask-image: radial-gradient(ellipse at center, black 0 42%, transparent 70%);
+  animation: difference-drift 18s ease-in-out infinite alternate;
+}
+
+.hero-difference-field__layer--one {
+  transform: rotate(-9deg) skewX(-8deg);
+}
+
+.hero-difference-field__layer--two {
+  top: -7rem;
+  right: 18%;
+  width: min(34rem, 50vw);
+  opacity: 0.07;
+  background-size: 9px 9px;
+  mask-image: linear-gradient(135deg, transparent 15%, black 48%, transparent 78%);
+  animation-duration: 24s;
+  animation-direction: alternate-reverse;
+}
+
+@keyframes difference-drift {
+  from {
+    translate: 0 -1%;
+    scale: 0.98;
+  }
+  to {
+    translate: -5% 4%;
+    scale: 1.04;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-difference-field__layer {
+    top: 5rem;
+    right: -14rem;
+    width: 36rem;
+    opacity: 0.09;
+  }
+
+  .hero-difference-field__layer--two {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-difference-field__layer {
+    animation: none;
+  }
+}

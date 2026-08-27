@@ -26,8 +26,12 @@ export function HeroSection() {
   }, [])
 
   return (
-    <section aria-label="Hero" className="overflow-hidden bg-background">
-      <div className="mx-auto max-w-4xl px-6 pb-12 pt-20 text-center sm:pt-28">
+    <section aria-label="Hero" className="relative isolate overflow-hidden bg-background">
+      <div className="hero-difference-field" aria-hidden="true">
+        <div className="hero-difference-field__layer hero-difference-field__layer--one" />
+        <div className="hero-difference-field__layer hero-difference-field__layer--two" />
+      </div>
+      <div className="relative mx-auto max-w-4xl px-6 pb-12 pt-20 text-center sm:pt-28">
         <p className="font-mono text-xs font-medium tracking-[0.18em] text-brand">AEO, MEASURED LIVE</p>
         <h1 className="mt-5 text-balance text-4xl font-semibold leading-[1.06] tracking-tight sm:text-6xl">
           Find out if <span key={engines[engine]} className="inline-block animate-in fade-in slide-in-from-bottom-2 text-brand duration-500">{engines[engine]}</span>
