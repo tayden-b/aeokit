@@ -128,6 +128,54 @@ def _row_view(r: dict) -> dict:
 # --- tools ---
 
 @server.tool()
+def check_setup() -> dict:
+    """Verify aeokit is configured correctly before spending anything. Reports which
+    engines you can measure, which you're missing, and what each additional key buys.
+    Call this first if a probe fails, or right after installing."""
+    from . import keys as _keys
+
+    src = _keys.describe_source()
+    have = [e for e, s in src["by_engine"].items() if s != "none"]
+    missing = [e for e, s in src["by_engine"].items() if s == "none"]
+    can_derive = bool(_keys.resolve("openai") or _keys.resolve("gemini"))
+
+    if not have:
+        status = "not configured"
+        advice = ("No API keys found. aeokit runs on your own keys — add at least one to "
+                  "your MCP client config, then restart the client. " + _keys.BYOK_INSTRUCTIONS)
+    elif not can_derive:
+        status = "incomplete"
+        advice = ("You have engine keys but none that can write buyer questions. Add an "
+                  "OpenAI or Gemini key — those two can both generate the question set "
+                  "and judge the answers.")
+    elif len(have) == 1:
+        status = "ready, single engine"
+        advice = (f"You can measure {have[0]} only. That works, but the most useful finding "
+                  "aeokit produces is engines DISAGREEING about who to recommend — which "
+                  "needs at least two. Adding a second key roughly doubles the value.")
+    else:
+        status = "ready"
+        advice = f"You can measure {len(have)} engines and compare them against each other."
+
+    return {
+        "status": status,
+        "can_measure": have,
+        "not_configured": missing,
+        "can_write_questions": can_derive,
+        "paying_with": src["mode"],
+        "advice": advice,
+        "what_each_key_adds": {
+            "openai": "measures ChatGPT + can write questions and judge answers",
+            "gemini": "measures Gemini + can write questions and judge answers",
+            "anthropic": "measures Claude (engine only)",
+            "perplexity": "measures Perplexity, always search-grounded (engine only)",
+        },
+        "minimum": "one OpenAI or Gemini key",
+        "recommended": "OpenAI + Gemini — two engines that disagree often, both fully capable",
+    }
+
+
+@server.tool()
 def coverage() -> dict:
     """What the corpus currently measures: categories, capabilities, engines,
     collection dates, and total samples. Call this first to learn what you can ask —
