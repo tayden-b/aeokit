@@ -1,12 +1,11 @@
 """
-Export rollups → a JSON snapshot the dashboard reads.
+Export the corpus → JSON snapshots any frontend or API can serve.
 
-The clean seam between the Python backend (owns data) and the frontend (renders
-this file). Produces: an overview KPI block, and per-feature leaderboards with
-routing share, mention rate, avg position, sentiment, top positioning attributes,
-per-engine breakdown, and a routing-share trend across dates.
+The clean seam between the instrument (owns data) and every consumer (site
+pages, MCP tools, raw downloads). The export is neutral: no product is special —
+the instrument measures a board, it doesn't root for anyone on it.
 
-    python export.py   ->   web/public/data.json
+    python export.py   ->   exports/data.json
 """
 
 from __future__ import annotations
@@ -19,13 +18,13 @@ from pathlib import Path
 import db
 from metrics import normalize
 
-OUT = Path(__file__).parent / "web" / "public" / "data.json"
+OUT = Path(__file__).parent / "exports" / "data.json"
 
 
 def _attributes_for_latest(conn, latest: str) -> dict[tuple, list[str]]:
-    """(feature, normalized product) -> top descriptive attributes on the latest date."""
+    """(capability, normalized product) -> top descriptive attributes on the latest date."""
     rows = conn.execute(
-        "SELECT r.feature AS feature, rt.product AS product, rt.attributes AS attrs "
+        "SELECT r.capability AS capability, rt.product AS product, rt.attributes AS attrs "
         "FROM routings rt JOIN runs r ON rt.run_id = r.id WHERE r.run_date = ?",
         (latest,),
     ).fetchall()
@@ -39,7 +38,7 @@ def _attributes_for_latest(conn, latest: str) -> dict[tuple, list[str]]:
         for a in attrs:
             a = (a or "").strip().lower()
             if a:
-                counts[(row["feature"], prod)][a] += 1
+                counts[(row["capability"], prod)][a] += 1
     return {k: [a for a, _ in c.most_common(6)] for k, c in counts.items()}
 
 
@@ -47,98 +46,73 @@ def export() -> Path:
     conn = db.connect()
     db.init_db(conn)
     dates = db.distinct_run_dates(conn)
-    latest = dates[-1] if dates else None
-    rollups = [dict(r) for r in db.fetch_rollups(conn)]
-    total_runs = conn.execute("SELECT COUNT(*) AS n FROM runs").fetchone()["n"]
-    attrs_map = _attributes_for_latest(conn, latest) if latest else {}
+    if not dates:
+        raise SystemExit("Corpus is empty — run collect.py first.")
+    latest = dates[-1]
+    attrs_map = _attributes_for_latest(conn, latest)
+    rollups = conn.execute("SELECT * FROM rollups ORDER BY run_date").fetchall()
 
-    feats: dict[tuple, dict] = {}
+    caps: dict[tuple, dict] = {}
     for r in rollups:
-        key = (r["category"], r["feature"])
-        feats.setdefault(key, {"rows": []})["rows"].append(r)
-
-    features = []
-    for (category, feature), data in sorted(feats.items()):
-        rows = data["rows"]
-
-        blended_latest = [
-            {
+        key = (r["category"], r["capability"])
+        caps.setdefault(key, {"engines": defaultdict(list), "trend": defaultdict(list)})
+        if r["run_date"] == latest:
+            caps[key]["engines"][r["engine"]].append({
                 "product": r["product"],
                 "routing_share": r["routing_share"],
                 "mention_rate": r["mention_rate"],
                 "avg_position": r["avg_position"],
+                "n": r["n_samples"],
                 "sentiment": {
                     "positive": r["sentiment_positive"],
                     "neutral": r["sentiment_neutral"],
                     "negative": r["sentiment_negative"],
                 },
-                "attributes": attrs_map.get((feature, r["product"]), []),
-            }
-            for r in rows
-            if r["provider"] == "blended" and r["run_date"] == latest
-        ]
-        blended_latest.sort(key=lambda p: (p["routing_share"], p["mention_rate"]), reverse=True)
-        leaderboard = [
-            p for p in blended_latest
-            if p["routing_share"] > 0 or p["mention_rate"] >= 0.5
-        ][:8]
-        shown = {p["product"] for p in leaderboard}
+                "attributes": attrs_map.get((r["capability"], r["product"]), []),
+                "spec_version": r["spec_version"],
+            })
+        if r["engine"] == "blended":
+            caps[key]["trend"][r["product"]].append({
+                "date": r["run_date"], "routing_share": r["routing_share"],
+            })
 
-        # per-engine routing (latest), limited to shown products
-        by_provider: dict[str, list] = defaultdict(list)
-        for r in rows:
-            if r["provider"] != "blended" and r["run_date"] == latest and r["product"] in shown:
-                by_provider[r["provider"]].append(
-                    {"product": r["product"], "routing_share": r["routing_share"]}
-                )
-        for p in by_provider.values():
-            p.sort(key=lambda x: x["routing_share"], reverse=True)
-
-        # routing-share trend across dates (blended), per shown product
-        trend: dict[str, list] = defaultdict(list)
-        for r in rows:
-            if r["provider"] == "blended" and r["product"] in shown:
-                trend[r["product"]].append(
-                    {"date": r["run_date"], "routing_share": r["routing_share"]}
-                )
-        for series in trend.values():
+    capabilities = []
+    for (category, capability), data in sorted(caps.items()):
+        engines = {
+            eng: sorted(rows, key=lambda x: -(x["routing_share"] or 0))
+            for eng, rows in data["engines"].items()
+        }
+        blended = engines.get("blended", [])
+        for series in data["trend"].values():
             series.sort(key=lambda x: x["date"])
-
-        features.append({
+        capabilities.append({
             "category": category,
-            "feature": feature,
-            "leader": leaderboard[0]["product"] if leaderboard else None,
-            "leaderboard": leaderboard,
-            "by_provider": dict(by_provider),
-            "trend": dict(trend),
+            "capability": capability,
+            "leader": blended[0]["product"] if blended else None,
+            "engines": engines,
+            "trend": dict(data["trend"]),
         })
 
-    providers = sorted({r["provider"] for r in rollups if r["provider"] != "blended"})
-
-    # overview: how many features each tracked product leads
-    tracked = {"HashiCorp Vault", "Terraform"}
-    leads = Counter(f["leader"] for f in features if f["leader"] in tracked)
+    engines_present = sorted({r["engine"] for r in rollups if r["engine"] != "blended"})
+    grounding = dict(conn.execute(
+        "SELECT grounding_mode, COUNT(*) FROM runs WHERE run_date = ? GROUP BY grounding_mode",
+        (latest,),
+    ).fetchall())
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "latest_date": latest,
         "dates": dates,
-        "providers": providers,
-        "overview": {
-            "features": len(features),
-            "engines": len(providers),
-            "engine_names": providers,
-            "samples": total_runs,
-            "dates": len(dates),
-            "tracked_leads": dict(leads),
-        },
-        "features": features,
+        "engines": engines_present,
+        "grounding_modes": grounding,
+        "n_capabilities": len(capabilities),
+        "capabilities": capabilities,
     }
-
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(payload, indent=2))
+    conn.close()
     return OUT
 
 
 if __name__ == "__main__":
-    print(f"Wrote {export()}")
+    print(f"wrote {export()}")

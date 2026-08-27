@@ -23,7 +23,10 @@ from llm_util import call_with_retries
 
 load_dotenv()
 
-OPENAI_EXTRACT_MODEL = "gpt-4o-mini"
+JUDGE_VERSION = "judge-0.1"   # frozen per spec version; golden-set kappa pending (SPEC.md §4)
+JUDGE_MODEL = "gpt-4o-mini"
+
+OPENAI_EXTRACT_MODEL = JUDGE_MODEL
 GEMINI_EXTRACT_MODEL = "gemini-2.5-flash-lite"  # cheap/fast, free tier, structured output
 
 
@@ -111,11 +114,7 @@ def extract(answer_text: str) -> Extraction:
 
 
 if __name__ == "__main__":
-    from m0_raw import PROMPT, get_raw_answer
+    import sys
 
-    print(f"PROMPT:\n{PROMPT}\n" + "=" * 70)
-    raw = get_raw_answer(PROMPT)
-    print("RAW ANSWER (first 400 chars):\n" + raw[:400] + " ...\n" + "=" * 70)
-    result = extract(raw)
-    print("STRUCTURED EXTRACTION:\n")
+    result = extract(sys.stdin.read())
     print(result.model_dump_json(indent=2))

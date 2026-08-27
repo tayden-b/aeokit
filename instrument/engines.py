@@ -1,0 +1,174 @@
+"""
+Grounded answer collection, one adapter per engine.
+
+Design rules:
+- An engine is used only if its API key is present (env-gated, like v1).
+- Every answer records HOW it was produced: grounding_mode is 'web_search' /
+  'grounded' / 'native' only when the search-augmented call actually succeeded;
+  a fallback to the plain model records 'none'. The mode is data, never a guess —
+  the spec's scope-of-claims (§2) depends on this field being honest.
+- Citations returned by the engine itself are captured when the response carries
+  them (grounded OpenAI/Gemini, Perplexity always).
+"""
+
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass, field
+
+from dotenv import load_dotenv
+
+from llm_util import call_with_retries
+
+load_dotenv()
+
+TEMPERATURE = 0.7
+
+ENGINES: dict[str, dict[str, str]] = {
+    "openai":     {"env": "OPENAI_API_KEY",     "model": os.getenv("MM_MODEL_OPENAI", "gpt-4o-mini")},
+    "anthropic":  {"env": "ANTHROPIC_API_KEY",  "model": os.getenv("MM_MODEL_ANTHROPIC", "claude-haiku-4-5-20251001")},
+    "gemini":     {"env": "GEMINI_API_KEY",     "model": os.getenv("MM_MODEL_GEMINI", "gemini-2.5-flash-lite")},
+    "perplexity": {"env": "PERPLEXITY_API_KEY", "model": os.getenv("MM_MODEL_PERPLEXITY", "sonar")},
+}
+
+
+@dataclass
+class EngineAnswer:
+    text: str
+    model: str
+    grounding_mode: str            # 'web_search' | 'grounded' | 'native' | 'none'
+    citations: list[str] = field(default_factory=list)
+
+
+def available_engines() -> list[str]:
+    return [name for name, cfg in ENGINES.items() if os.getenv(cfg["env"])]
+
+
+def ask(engine: str, prompt: str) -> EngineAnswer:
+    cfg = ENGINES[engine]
+    key = os.getenv(cfg["env"])
+    if not key:
+        raise RuntimeError(f"No API key for engine '{engine}' ({cfg['env']}).")
+    return _ASK[engine](key, cfg["model"], prompt)
+
+
+def _ask_openai(key: str, model: str, prompt: str) -> EngineAnswer:
+    from openai import OpenAI
+
+    client = OpenAI(api_key=key)
+    try:
+        resp = call_with_retries(lambda: client.responses.create(
+            model=model,
+            input=prompt,
+            tools=[{"type": "web_search"}],
+            temperature=TEMPERATURE,
+        ), tries=3)
+        citations = []
+        for item in getattr(resp, "output", []) or []:
+            for block in getattr(item, "content", []) or []:
+                for ann in getattr(block, "annotations", []) or []:
+                    url = getattr(ann, "url", None)
+                    if url:
+                        citations.append(url)
+        return EngineAnswer(resp.output_text, model, "web_search", citations)
+    except Exception:
+        resp = call_with_retries(lambda: client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=TEMPERATURE,
+        ))
+        return EngineAnswer(resp.choices[0].message.content, model, "none")
+
+
+def _ask_anthropic(key: str, model: str, prompt: str) -> EngineAnswer:
+    from anthropic import Anthropic
+
+    client = Anthropic(api_key=key)
+
+    def _text_and_citations(resp) -> tuple[str, list[str]]:
+        texts, urls = [], []
+        for block in resp.content:
+            if getattr(block, "type", "") == "text":
+                texts.append(block.text)
+                for cit in getattr(block, "citations", None) or []:
+                    url = getattr(cit, "url", None)
+                    if url:
+                        urls.append(url)
+        return "\n".join(texts), urls
+
+    try:
+        resp = call_with_retries(lambda: client.messages.create(
+            model=model,
+            max_tokens=1500,
+            temperature=TEMPERATURE,
+            messages=[{"role": "user", "content": prompt}],
+            tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 3}],
+        ), tries=3)
+        text, citations = _text_and_citations(resp)
+        return EngineAnswer(text, model, "web_search", citations)
+    except Exception:
+        resp = call_with_retries(lambda: client.messages.create(
+            model=model, max_tokens=1500, temperature=TEMPERATURE,
+            messages=[{"role": "user", "content": prompt}],
+        ))
+        text, _ = _text_and_citations(resp)
+        return EngineAnswer(text, model, "none")
+
+
+def _ask_gemini(key: str, model: str, prompt: str) -> EngineAnswer:
+    from google import genai
+    from google.genai import types
+
+    client = genai.Client(api_key=key)
+    try:
+        resp = call_with_retries(lambda: client.models.generate_content(
+            model=model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+                temperature=TEMPERATURE,
+            ),
+        ), tries=3)
+        citations = []
+        try:
+            meta = resp.candidates[0].grounding_metadata
+            for chunk in getattr(meta, "grounding_chunks", None) or []:
+                uri = getattr(getattr(chunk, "web", None), "uri", None)
+                if uri:
+                    citations.append(uri)
+        except (AttributeError, IndexError):
+            pass
+        return EngineAnswer(resp.text, model, "grounded", citations)
+    except Exception:
+        resp = call_with_retries(lambda: client.models.generate_content(
+            model=model, contents=prompt,
+            config=types.GenerateContentConfig(temperature=TEMPERATURE),
+        ))
+        return EngineAnswer(resp.text, model, "none")
+
+
+def _ask_perplexity(key: str, model: str, prompt: str) -> EngineAnswer:
+    from openai import OpenAI
+
+    client = OpenAI(api_key=key, base_url="https://api.perplexity.ai")
+    resp = call_with_retries(lambda: client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=TEMPERATURE,
+    ))
+    citations = list(getattr(resp, "citations", None) or [])
+    if not citations:
+        for sr in getattr(resp, "search_results", None) or []:
+            url = sr.get("url") if isinstance(sr, dict) else getattr(sr, "url", None)
+            if url:
+                citations.append(url)
+    # Perplexity searches by construction — 'native', and no ungrounded fallback exists.
+    return EngineAnswer(resp.choices[0].message.content, model, "native", citations)
+
+
+_ASK = {
+    "openai": _ask_openai,
+    "anthropic": _ask_anthropic,
+    "gemini": _ask_gemini,
+    "perplexity": _ask_perplexity,
+}

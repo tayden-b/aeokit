@@ -2,9 +2,9 @@
 Build daily rollups from stored runs.
 
 Reads a day's raw runs + routings out of SQLite, groups them by
-(provider, category, feature), reuses the same routing-share logic from
+(engine, category, capability), reuses the same routing-share logic from
 metrics.py, and writes one rollup row per product. Also writes a 'blended'
-provider row (all providers pooled) so the dashboard can show per-engine and
+engine row (all engines pooled) so the read API can show per-engine and
 overall views.
 
 Run automatically at the end of run.py; can also be invoked standalone to
@@ -37,18 +37,18 @@ def _extractions_from_runs(conn, runs) -> list:
     return out
 
 
-def _write_group(conn, run_date, provider, category, feature, extractions) -> int:
+def _write_group(conn, run_date, engine, category, capability, extractions, spec_version) -> int:
     shares = routing_share(extractions)
     n = len(extractions)
     for product, m in shares.items():
         s = m["sentiment"]
         db.upsert_rollup(conn, {
-            "run_date": run_date, "provider": provider, "category": category,
-            "feature": feature, "product": product,
+            "run_date": run_date, "engine": engine, "category": category,
+            "capability": capability, "product": product,
             "routing_share": m["routing_share"], "mention_rate": m["mention_rate"],
             "avg_position": m["avg_position"], "n_samples": n,
             "sentiment_positive": s["positive"], "sentiment_neutral": s["neutral"],
-            "sentiment_negative": s["negative"],
+            "sentiment_negative": s["negative"], "spec_version": spec_version,
         })
     return len(shares)
 
@@ -58,17 +58,17 @@ def build_rollups(conn, run_date: str) -> int:
     # when normalization/aliases change)
     conn.execute("DELETE FROM rollups WHERE run_date = ?", (run_date,))
     runs = db.fetch_runs(conn, run_date)
-    # group runs by (provider, category, feature) and also (blended, category, feature)
-    by_provider = defaultdict(list)
+    by_engine = defaultdict(list)
     by_blended = defaultdict(list)
     for run in runs:
-        by_provider[(run["provider"], run["category"], run["feature"])].append(run)
-        by_blended[("blended", run["category"], run["feature"])].append(run)
+        by_engine[(run["engine"], run["category"], run["capability"])].append(run)
+        by_blended[("blended", run["category"], run["capability"])].append(run)
 
     written = 0
-    for (provider, category, feature), grp in {**by_provider, **by_blended}.items():
+    for (engine, category, capability), grp in {**by_engine, **by_blended}.items():
         exts = _extractions_from_runs(conn, grp)
-        written += _write_group(conn, run_date, provider, category, feature, exts)
+        spec_version = grp[0]["spec_version"]
+        written += _write_group(conn, run_date, engine, category, capability, exts, spec_version)
     conn.commit()
     return written
 

@@ -1,61 +1,102 @@
 """
-M1 — sampling + multi-provider collection → feature routing share.
+Collection run — sample every prompt variant across every available engine,
+persist raw answers + extractions with full method metadata, then rebuild
+today's rollups.
 
-For each feature, ask every available provider the prompt N times, extract each
-answer into structured data, then aggregate into routing share. Sampling is the
-whole point: a single answer is noise (we saw Vault vs AWS flip run-to-run), so
-we repeat and average.
+Sampling is the whole point: one answer is noise (routing flips run to run), so
+we repeat and report distributions. See SPEC.md §2.
 
 Usage:
-    python collect.py                 # all features, N=5, all available providers
-    python collect.py --n 4 --limit 2 # first 2 features, 4 samples each (cheap)
+    python collect.py --n 5                    # full set, 5 samples per (variant, engine)
+    python collect.py --n 2 --category iac     # one category, cheap
+    python collect.py --n 1 --max-calls 8      # smoke test, hard budget cap
 """
 
 from __future__ import annotations
 
 import argparse
+import datetime as dt
+import json
 
-from extract import extract
-from features import FEATURES
-from metrics import routing_share
-from providers import available_providers, get_answer
+import db
+from engines import TEMPERATURE, ask, available_engines
+from extract import JUDGE_MODEL, JUDGE_VERSION, extract
+from prompts import PROMPT_SET_VERSION, counts, iter_variants
+from rollup import build_rollups
 
-
-def collect_feature(feat: dict, providers: list[str], n: int) -> list:
-    """Sample one feature across providers; return a list of Extraction objects."""
-    extractions = []
-    for provider in providers:
-        for i in range(n):
-            answer = get_answer(provider, feat["prompt"])
-            extractions.append(extract(answer))
-            print(f"    · {provider} sample {i + 1}/{n} done")
-    return extractions
+SPEC_VERSION = "0.1-draft"
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n", type=int, default=5, help="samples per provider")
-    parser.add_argument("--limit", type=int, default=None, help="only first N features")
+    parser.add_argument("--n", type=int, default=5, help="samples per (variant, engine)")
+    parser.add_argument("--category", default=None, help="only this category")
+    parser.add_argument("--engines", default=None, help="comma list, e.g. openai,gemini")
+    parser.add_argument("--max-calls", type=int, default=None, help="hard cap on engine calls (budget guard)")
+    parser.add_argument("--no-rollup", action="store_true")
     args = parser.parse_args()
 
-    providers = available_providers()
-    if not providers:
-        raise SystemExit("No provider API keys found. Set OPENAI_API_KEY in .env")
-    print(f"Providers: {', '.join(providers)}  |  samples each: {args.n}\n")
+    engines = available_engines()
+    if args.engines:
+        engines = [e for e in engines if e in args.engines.split(",")]
+    if not engines:
+        raise SystemExit("No engine API keys found (see engines.ENGINES).")
 
-    features = FEATURES[: args.limit] if args.limit else FEATURES
-    for feat in features:
-        print(f"[{feat['category']}] {feat['feature']}")
-        extractions = collect_feature(feat, providers, args.n)
-        shares = routing_share(extractions)
-        print(f"  → feature ownership (n={len(extractions)}):")
-        for product, m in shares.items():
-            print(
-                f"     {product:<22} routing {m['routing_share']:>5.0%}"
-                f"  | mentions {m['mention_rate']:>5.0%}"
-                f"  | avg pos {m['avg_position']}"
-            )
-        print()
+    conn = db.connect()
+    db.init_db(conn)
+
+    now = dt.datetime.now(dt.timezone.utc)
+    run_date = now.strftime("%Y-%m-%d")
+    c = counts()
+    print(f"spec {SPEC_VERSION} · prompts {PROMPT_SET_VERSION} "
+          f"({c['categories']} categories, {c['capabilities']} capabilities, {c['variants']} variants)")
+    print(f"engines: {', '.join(engines)} · n={args.n} per (variant, engine)\n")
+
+    calls = 0
+    for category, capability, variant in iter_variants():
+        if args.category and category != args.category:
+            continue
+        print(f"[{category}] {capability} · {variant['id']}")
+        for engine in engines:
+            for i in range(args.n):
+                if args.max_calls is not None and calls >= args.max_calls:
+                    print(f"\n-- max-calls cap ({args.max_calls}) reached, stopping collection --")
+                    conn.commit()
+                    _finish(conn, run_date, args.no_rollup)
+                    return
+                answer = ask(engine, variant["prompt"])
+                calls += 1
+                run_id = db.insert_run(
+                    conn, ts=now.isoformat(), run_date=run_date, engine=engine,
+                    model=answer.model, grounding_mode=answer.grounding_mode,
+                    temperature=TEMPERATURE, category=category, capability=capability,
+                    prompt_set=PROMPT_SET_VERSION, variant=variant["id"],
+                    prompt=variant["prompt"], spec_version=SPEC_VERSION,
+                    raw_answer=answer.text,
+                )
+                for url in answer.citations:
+                    db.insert_citation(conn, run_id=run_id, url=url)
+                extraction = extract(answer.text)
+                for p in extraction.products:
+                    db.insert_routing(
+                        conn, run_id=run_id, product=p.name, role=p.role,
+                        position=p.position, sentiment=p.sentiment,
+                        attributes=json.dumps(p.attributes),
+                        judge_model=JUDGE_MODEL, judge_version=JUDGE_VERSION,
+                    )
+                print(f"    · {engine} {i + 1}/{args.n} — {answer.grounding_mode}, "
+                      f"{len(answer.citations)} citations, {len(extraction.products)} products")
+        conn.commit()
+
+    _finish(conn, run_date, args.no_rollup)
+
+
+def _finish(conn, run_date: str, no_rollup: bool) -> None:
+    if not no_rollup:
+        n = build_rollups(conn, run_date)
+        print(f"\nrollups rebuilt for {run_date}: {n} rows")
+    conn.commit()
+    conn.close()
 
 
 if __name__ == "__main__":
