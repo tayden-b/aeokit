@@ -44,12 +44,22 @@ function Button({
   className,
   variant = 'default',
   size = 'default',
+  nativeButton,
+  render,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  // Base UI defaults nativeButton to true. When `render` supplies a non-<button>
+  // element (an <a> for our CTAs), that default is wrong and Base UI logs an
+  // accessibility error. Infer it here so call sites don't each have to remember.
+  const rendersNativeButton =
+    !render || (typeof render === 'object' && 'type' in render && render.type === 'button')
+
   return (
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      nativeButton={nativeButton ?? rendersNativeButton}
+      render={render}
       {...props}
     />
   )
