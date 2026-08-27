@@ -26,12 +26,26 @@ def _resolve_redirect(url: str, timeout: float = 3.0) -> str:
     wrapper on any failure (an opaque true source beats a dropped one)."""
     if "grounding-api-redirect" not in url:
         return url
+    import urllib.error
     import urllib.request
 
+    class _NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, *args, **kwargs):
+            return None
+
     try:
-        req = urllib.request.Request(url, method="HEAD")
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return resp.url or url
+        import ssl
+
+        import certifi
+
+        ctx = ssl.create_default_context(cafile=certifi.where())
+        opener = urllib.request.build_opener(
+            urllib.request.HTTPSHandler(context=ctx), _NoRedirect)
+        opener.open(url, timeout=timeout)
+        return url
+    except urllib.error.HTTPError as e:
+        # the 302's Location header IS the real source — no need to fetch it
+        return e.headers.get("Location") or url
     except Exception:
         return url
 
