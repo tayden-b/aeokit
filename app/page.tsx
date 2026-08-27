@@ -1,10 +1,10 @@
-import { SiteHeader } from '@/components/marketmaker/site-header'
-import { HeroSection } from '@/components/marketmaker/hero-section'
-import { LiveDataDemo } from '@/components/marketmaker/live-data-demo'
-import { ReadsTheWeb } from '@/components/marketmaker/reads-the-web'
-import { AgentHandsFile } from '@/components/marketmaker/agent-hands-file'
-import { FinalCta } from '@/components/marketmaker/final-cta'
-import { SiteFooter } from '@/components/marketmaker/site-footer'
+import { SiteHeader } from '@/components/aeokit/site-header'
+import { HeroSection } from '@/components/aeokit/hero-section'
+import { LiveDataDemo } from '@/components/aeokit/live-data-demo'
+import { ReadsTheWeb } from '@/components/aeokit/reads-the-web'
+import { AgentHandsFile } from '@/components/aeokit/agent-hands-file'
+import { FinalCta } from '@/components/aeokit/final-cta'
+import { SiteFooter } from '@/components/aeokit/site-footer'
 
 export default function Page() {
   return (

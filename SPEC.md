@@ -1,8 +1,8 @@
-# marketmaker Measurement Specification
+# aeokit Measurement Specification
 
 **Version 0.1-draft · 2026-08-26 · status: DRAFT — numbers published under a draft spec are provisional**
 
-marketmaker measures which products AI answer engines route users to, per capability. This document is the complete method. Anyone should be able to reproduce our numbers from this spec and the published code; anywhere they can't is a bug in the spec.
+aeokit measures which products AI answer engines route users to, per capability. This document is the complete method. Anyone should be able to reproduce our numbers from this spec and the published code; anywhere they can't is a bug in the spec.
 
 ## 1. Unit of analysis: the capability
 

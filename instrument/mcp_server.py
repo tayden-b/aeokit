@@ -1,5 +1,5 @@
 """
-marketmaker MCP server — measured AEO data for AI agents.
+aeokit MCP server — measured AEO data for AI agents.
 
 Design rules:
 - Tools answer the questions a product owner's agent actually asks: where do I
@@ -12,7 +12,7 @@ Design rules:
 
 Run locally (stdio):        python mcp_server.py
 Run hosted (later):         python mcp_server.py --http
-Connect from Claude Code:   claude mcp add marketmaker -- <venv-python> mcp_server.py
+Connect from Claude Code:   claude mcp add aeokit -- <venv-python> mcp_server.py
 """
 
 from __future__ import annotations
@@ -33,13 +33,13 @@ from stats import confidence_note, wilson_interval
 QUEUE_PATH = Path(__file__).parent / "exports" / "probe_queue.jsonl"
 
 server = MCPServer(
-    "marketmaker",
+    "aeokit",
     instructions=(
-        "marketmaker is a measurement instrument for AI answer engines: it repeatedly "
+        "aeokit is a measurement instrument for AI answer engines: it repeatedly "
         "samples ChatGPT, Gemini, and other engines with buyer-intent questions and "
         "records which products they recommend. Use `coverage` to see what's measured, "
         "`product_report` for where a product ranks and what's said about it, "
-        "`capability_ranking` for who wins a capability, and `request_measurement` "
+        "`question_ranking` for who wins a buyer question, and `request_measurement` "
         "when something isn't in the corpus yet. Numbers are measured distributions, "
         "not opinions — always relay the caveats and sample sizes to the user."
     ),
@@ -208,7 +208,7 @@ def product_report(product: str, category: str | None = None) -> dict:
 
 
 @server.tool()
-def capability_ranking(capability: str, engine: str | None = None) -> dict:
+def question_ranking(capability: str, engine: str | None = None) -> dict:
     """Who wins a capability: the measured distribution of product recommendations
     per engine, with confidence intervals — and whether the engines disagree about
     the winner. For 'who do AI engines recommend for X?'"""
@@ -470,7 +470,7 @@ def probe_capability(capability: str, engines_list: str = "openai,gemini", sampl
                               "sentiment": p.sentiment} for p in ext.products],
                 "citations": ans.citations[:5],
             })
-    baseline = capability_ranking(match)
+    baseline = question_ranking(match)
     return {"found": True, "capability": match, "live_runs": results,
             "engine_calls_spent": calls,
             "corpus_baseline": {"leaders_by_engine": baseline.get("leaders_by_engine"),
@@ -485,7 +485,7 @@ def probe_capability(capability: str, engines_list: str = "openai,gemini", sampl
 @server.prompt(title="AEO Audit")
 def aeo_audit(product: str) -> str:
     """Full audit of one product's standing in AI answers — ranked report with actions."""
-    return f"""Run a full AEO audit for "{product}" using marketmaker tools, in this order:
+    return f"""Run a full AEO audit for "{product}" using aeokit tools, in this order:
 1. `coverage` — confirm what's measured and note total sample sizes.
 2. `product_report` on "{product}" — standings per capability per engine.
 3. `whats_said` on "{product}" — how engines describe it when they mention it.
@@ -506,7 +506,7 @@ Close with the 3 highest-leverage actions, each tied to a specific measured gap.
 @server.prompt(title="Category Snapshot")
 def category_snapshot(category: str) -> str:
     """Cross-engine ownership map of one category — who wins what, where engines disagree."""
-    return f"""Build a category snapshot for "{category}" using marketmaker tools:
+    return f"""Build a category snapshot for "{category}" using aeokit tools:
 1. `coverage` — list this category's measured capabilities and sample sizes.
 2. `capability_ranking` for EACH capability — collect leaders, distributions, disagreement flags.
 3. `sources` for the 2-3 most contested capabilities.

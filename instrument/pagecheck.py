@@ -32,7 +32,7 @@ import certifi
 MAX_BYTES = 400_000
 TIMEOUT = 6.0
 MAX_REDIRECTS = 3
-USER_AGENT = "marketmaker-probe/0.1 (+https://marketmaker.dev/bot)"
+USER_AGENT = "aeokit-probe/0.1 (+https://aeokit.ai/bot)"
 
 
 class UnsafeURL(Exception):

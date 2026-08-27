@@ -10,7 +10,7 @@ user's own MCP client config, and for a hosted server means server-side
 storage keyed by an opaque token.
 
 Resolution order per engine:
-  1. MM_USER_<ENGINE>_API_KEY   — the user's own key (BYOK). Their spend.
+  1. AEOKIT_USER_<ENGINE>_API_KEY   — the user's own key (BYOK). Their spend.
   2. <ENGINE>_API_KEY           — house key. Trial only, hard budget-capped.
 
 Nothing in this module returns key material to callers that serialize into
@@ -51,7 +51,7 @@ def resolve(engine: str) -> KeySource | None:
     env = ENGINE_ENV.get(engine)
     if not env:
         return None
-    user = os.getenv(f"MM_USER_{engine.upper()}_API_KEY")
+    user = os.getenv(f"AEOKIT_USER_{engine.upper()}_API_KEY")
     if user:
         return KeySource(engine, user, "user")
     house = os.getenv(env)
@@ -91,9 +91,9 @@ def describe_source() -> dict:
 BYOK_INSTRUCTIONS = (
     "To run probes on your own API credits, add your keys to this MCP server's "
     "environment in your client config — never paste a key into the chat. Example "
-    "(Claude Code): claude mcp add marketmaker "
-    "--env MM_USER_OPENAI_API_KEY=sk-... --env MM_USER_GEMINI_API_KEY=... "
+    "(Claude Code): claude mcp add aeokit "
+    "--env AEOKIT_USER_OPENAI_API_KEY=sk-... --env AEOKIT_USER_GEMINI_API_KEY=... "
     "-- <python> mcp_server.py. Keys stay in your local config; they are never "
-    "sent to marketmaker's operator, never stored in the corpus, and never appear "
+    "sent to aeokit's operator, never stored in the corpus, and never appear "
     "in tool output."
 )

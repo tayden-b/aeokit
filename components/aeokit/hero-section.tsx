@@ -45,7 +45,7 @@ export function HeroSection() {
           <br className="hidden sm:block" /> recommends your product
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground">
-          Give your agent marketmaker. It asks the real engines your buyers&apos; real questions, many times over, then returns exactly where you stand.
+          Give your agent aeokit. It asks the real engines your buyers&apos; real questions, many times over, then returns exactly where you stand.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Button size="lg" className="rounded-full px-6" render={<a href="#get-started">Add to your agent</a>} />
@@ -57,7 +57,7 @@ export function HeroSection() {
       <div id="live-probe" className="mx-auto max-w-3xl px-4 pb-3">
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xl shadow-foreground/5">
           <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-            <div className="flex items-center gap-2 text-sm font-medium"><Layers className="size-4" aria-hidden="true" /> marketmaker <Plus className="size-3 text-muted-foreground" /> Agent</div>
+            <div className="flex items-center gap-2 text-sm font-medium"><Layers className="size-4" aria-hidden="true" /> aeokit <Plus className="size-3 text-muted-foreground" /> Agent</div>
             <button type="button" className="flex items-center gap-1 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">Live probe <ChevronDown className="size-3" /></button>
           </div>
           <div className="flex flex-col gap-4 px-5 py-5 sm:px-7">

@@ -7,7 +7,7 @@ export function FinalCta() {
       <div className="mx-auto max-w-3xl px-6 text-center">
         <span className="mx-auto flex size-11 items-center justify-center rounded-xl bg-brand text-brand-foreground"><Wrench className="size-5" aria-hidden="true" /></span>
         <h2 className="mt-6 text-balance text-4xl font-medium tracking-tight text-foreground md:text-5xl">Give your agent live market evidence.</h2>
-        <p className="mx-auto mt-5 max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground">Add marketmaker as an MCP tool and ask your first question in the agent you already use. Nothing else to log into or learn.</p>
+        <p className="mx-auto mt-5 max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground">Add aeokit as an MCP tool and ask your first question in the agent you already use. Nothing else to log into or learn.</p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Button size="lg" className="h-12 rounded-full px-7 text-base" render={<a href="#add-to-agent">Add to your agent <ArrowRight data-icon="inline-end" /></a>} />
           <Button size="lg" variant="outline" className="h-12 rounded-full px-7 text-base" render={<a href="#">Read setup docs</a>} />

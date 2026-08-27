@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 
 const query = 'how does Flowlane show up in AI search?'
 const offRows = ["One engine's guess about itself", 'No competitor comparison', 'No numbers, no sources, nothing to act on']
-const onRows = ['You appear in 12% of answers · #6 of 11', 'Invisible on Gemini · Asana wins 8 of 10', 'The 5 sites shaping those answers ↓']
+const onRows = ['You appear in 3 of 20 answers · #6 of 11', 'Invisible on Gemini · Asana wins 8 of 10', 'The 5 sites shaping those answers ↓']
 
 export function LiveDataDemo() {
   const [live, setLive] = useState(true)
@@ -32,7 +32,7 @@ export function LiveDataDemo() {
         </div>
 
         <div className="mt-8 overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm">
-          <div className="flex items-center gap-2 border-b border-border px-6 py-4 text-sm font-medium"><Layers className="size-4" /> marketmaker <span className="text-muted-foreground">+</span> Agent</div>
+          <div className="flex items-center gap-2 border-b border-border px-6 py-4 text-sm font-medium"><Layers className="size-4" /> aeokit <span className="text-muted-foreground">+</span> Agent</div>
           <div className="flex flex-col gap-4 p-6">
             <p className="ml-auto w-fit max-w-[90%] rounded-2xl bg-muted px-4 py-2.5 text-sm">{query}</p>
             <div key={String(live)} className="flex animate-in flex-col gap-4 fade-in duration-200">
@@ -44,7 +44,7 @@ export function LiveDataDemo() {
                   </div>
                 ))}
               </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">{live ? "Measured live: 8 buyer questions, 2 engines, 5 samples each. An AI can't tell you this about itself." : 'Measurement is off. Your agent is guessing.'}</p>
+              <p className="text-xs leading-relaxed text-muted-foreground">{live ? "Measured live: 8 buyer questions, 2 engines, 3 samples each — 48 answers. An AI can't tell you this about itself." : 'Measurement is off. Your agent is guessing.'}</p>
             </div>
           </div>
         </div>

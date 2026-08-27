@@ -1,8 +1,8 @@
-# marketmaker
+# aeokit
 
 **Find out whether AI answer engines recommend your product.**
 
-People don't search any more — they ask. When a buyer asks ChatGPT, Claude, Gemini, or Perplexity for a tool, the engine names specific products. marketmaker measures whether it names yours, and turns that into something you can act on.
+People don't search any more — they ask. When a buyer asks ChatGPT, Claude, Gemini, or Perplexity for a tool, the engine names specific products. aeokit measures whether it names yours, and turns that into something you can act on.
 
 Point it at any product, in any category, and it will:
 
@@ -49,7 +49,7 @@ Run a live probe:
 Connect it to an agent over MCP:
 
 ```bash
-claude mcp add marketmaker -- /abs/path/instrument/.venv/bin/python /abs/path/instrument/mcp_server.py
+claude mcp add aeokit -- /abs/path/instrument/.venv/bin/python /abs/path/instrument/mcp_server.py
 ```
 
 **Bring your own keys.** Set `MM_USER_<ENGINE>_API_KEY` in your MCP client config to run probes on your own credits. Keys are read only from the server environment — never accepted as tool parameters, because tool arguments land in conversation transcripts.

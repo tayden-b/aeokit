@@ -55,10 +55,10 @@ load_dotenv()
 TEMPERATURE = 0.7
 
 ENGINES: dict[str, dict[str, str]] = {
-    "openai":     {"env": "OPENAI_API_KEY",     "model": os.getenv("MM_MODEL_OPENAI", "gpt-4o-mini")},
-    "anthropic":  {"env": "ANTHROPIC_API_KEY",  "model": os.getenv("MM_MODEL_ANTHROPIC", "claude-haiku-4-5-20251001")},
-    "gemini":     {"env": "GEMINI_API_KEY",     "model": os.getenv("MM_MODEL_GEMINI", "gemini-2.5-flash-lite")},
-    "perplexity": {"env": "PERPLEXITY_API_KEY", "model": os.getenv("MM_MODEL_PERPLEXITY", "sonar")},
+    "openai":     {"env": "OPENAI_API_KEY",     "model": os.getenv("AEOKIT_MODEL_OPENAI", "gpt-4o-mini")},
+    "anthropic":  {"env": "ANTHROPIC_API_KEY",  "model": os.getenv("AEOKIT_MODEL_ANTHROPIC", "claude-haiku-4-5-20251001")},
+    "gemini":     {"env": "GEMINI_API_KEY",     "model": os.getenv("AEOKIT_MODEL_GEMINI", "gemini-2.5-flash-lite")},
+    "perplexity": {"env": "PERPLEXITY_API_KEY", "model": os.getenv("AEOKIT_MODEL_PERPLEXITY", "sonar")},
 }
 
 

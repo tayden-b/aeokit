@@ -1,8 +1,8 @@
 import { Bot, Check, FileSearch, Radar, SearchCheck } from 'lucide-react'
 
 const steps = [
-  { icon: Bot, title: 'Ask from your agent', body: 'Describe what you sell and who buys it. Your agent passes that context to marketmaker. No dashboard, tracking code, or site changes.' },
-  { icon: Radar, title: 'We ask the engines live', body: 'marketmaker writes the questions your buyers would actually ask, then samples the real engines repeatedly because one answer is noise.' },
+  { icon: Bot, title: 'Ask from your agent', body: 'Describe what you sell and who buys it. Your agent passes that context to aeokit. No dashboard, tracking code, or site changes.' },
+  { icon: Radar, title: 'We ask the engines live', body: 'aeokit writes the questions your buyers would actually ask, then samples the real engines repeatedly because one answer is noise.' },
   { icon: SearchCheck, title: 'Your agent gets the evidence', body: 'Rankings, competitors, exact answer language, and the websites shaping those answers return to the conversation where you started.' },
 ]
 
