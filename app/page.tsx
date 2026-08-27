@@ -1,6 +1,5 @@
 import { SiteHeader } from '@/components/marketmaker/site-header'
 import { HeroSection } from '@/components/marketmaker/hero-section'
-import { OneConnection } from '@/components/marketmaker/one-connection'
 import { LiveDataDemo } from '@/components/marketmaker/live-data-demo'
 import { ReadsTheWeb } from '@/components/marketmaker/reads-the-web'
 import { AgentHandsFile } from '@/components/marketmaker/agent-hands-file'
@@ -13,7 +12,6 @@ export default function Page() {
       <SiteHeader />
       <main>
         <HeroSection />
-        <OneConnection />
         <LiveDataDemo />
         <ReadsTheWeb />
         <AgentHandsFile />
