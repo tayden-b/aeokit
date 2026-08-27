@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Dithering } from '@paper-design/shaders-react'
 import { ArrowUpRight, Check, ChevronDown, Layers, Plus, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -27,22 +26,8 @@ export function HeroSection() {
   }, [])
 
   return (
-    <section aria-label="Hero" className="relative isolate overflow-hidden bg-background">
-      <div className="pointer-events-none absolute inset-y-0 right-0 -z-10 hidden w-[42%] overflow-hidden lg:block" aria-hidden="true">
-        <Dithering
-          className="size-full opacity-90"
-          colorBack="hsl(0, 0%, 100%)"
-          colorFront="hsl(232, 79%, 53%)"
-          shape="warp"
-          type="4x4"
-          pxSize={3}
-          scale={0.72}
-          speed={0.16}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--background)_0%,transparent_42%)]" />
-      </div>
-
-      <div className="relative mx-auto max-w-4xl px-6 pb-12 pt-20 text-center sm:pt-28">
+    <section aria-label="Hero" className="relative overflow-hidden bg-background">
+      <div className="mx-auto max-w-4xl px-6 pb-12 pt-20 text-center sm:pt-28">
         <p className="font-mono text-xs font-medium tracking-[0.18em] text-brand">AEO, MEASURED LIVE</p>
         <h1 className="mt-5 text-balance text-4xl font-semibold leading-[1.06] tracking-tight sm:text-6xl">
           Find out if{' '}
