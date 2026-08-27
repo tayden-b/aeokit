@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Dithering } from '@paper-design/shaders-react'
 import { ArrowUpRight, Check, ChevronDown, Layers, Plus, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const engines = ['ChatGPT', 'Gemini', 'Claude', 'Perplexity']
 const progress = [
   ['Wrote 8 buyer questions for your category', 'project-management'],
-  ['Asked ChatGPT and Gemini, 5 times each', '80 live answers'],
+  ['Asked ChatGPT and Gemini, 3 times each', '48 live answers'],
   ['Found who they recommend', '11 products named'],
 ]
 
@@ -27,14 +28,35 @@ export function HeroSection() {
 
   return (
     <section aria-label="Hero" className="relative isolate overflow-hidden bg-background">
-      <div className="hero-difference-field" aria-hidden="true">
-        <div className="hero-difference-field__layer hero-difference-field__layer--one" />
-        <div className="hero-difference-field__layer hero-difference-field__layer--two" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 -z-10 hidden w-[42%] overflow-hidden lg:block" aria-hidden="true">
+        <Dithering
+          className="size-full opacity-90"
+          colorBack="hsl(0, 0%, 100%)"
+          colorFront="hsl(232, 79%, 53%)"
+          shape="warp"
+          type="4x4"
+          pxSize={3}
+          scale={0.72}
+          speed={0.16}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--background)_0%,transparent_42%)]" />
       </div>
+
       <div className="relative mx-auto max-w-4xl px-6 pb-12 pt-20 text-center sm:pt-28">
         <p className="font-mono text-xs font-medium tracking-[0.18em] text-brand">AEO, MEASURED LIVE</p>
         <h1 className="mt-5 text-balance text-4xl font-semibold leading-[1.06] tracking-tight sm:text-6xl">
-          Find out if <span key={engines[engine]} className="inline-block animate-in fade-in slide-in-from-bottom-2 text-brand duration-500">{engines[engine]}</span>
+          Find out if{' '}
+          <span className="relative inline-grid min-w-[5.9em] text-left text-brand" aria-live="polite">
+            {engines.map((name, index) => (
+              <span
+                key={name}
+                className={`col-start-1 row-start-1 transition-all duration-500 ${index === engine ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0'}`}
+                aria-hidden={index !== engine}
+              >
+                {name}
+              </span>
+            ))}
+          </span>
           <br className="hidden sm:block" /> recommends your product
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground">
@@ -63,9 +85,9 @@ export function HeroSection() {
               ))}
             </div>
             <div className="flex flex-col divide-y divide-border rounded-xl bg-muted/60 px-4">
-              {['You appear in 12% of answers · ranked #6 of 11', 'ChatGPT → you’re #4 · Trello and Asana lead', 'Gemini → you’re never mentioned · Asana wins 8 of 10'].map((row) => <p key={row} className="py-3 text-sm font-medium">{row}</p>)}
+              {['You appear in 3 of 20 answers · ranked #6 of 11', 'ChatGPT → you’re #4 · Trello and Asana lead', 'Gemini → you’re never mentioned · Asana wins 8 of 10'].map((row) => <p key={row} className="py-3 text-sm font-medium">{row}</p>)}
             </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">Measured live just now, n=80 · full report includes what they say about you and which sites drive it</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">Measured live just now, 48 answers · full report includes what they say about you and which sites drive it</p>
           </div>
           <div className="flex items-center gap-3 border-t border-border px-5 py-3.5 text-muted-foreground"><span className="flex-1 text-sm">Reply...</span><span className="text-xs">Live</span><span className="flex size-7 items-center justify-center rounded-full bg-brand text-brand-foreground"><Send className="size-3.5" /></span></div>
         </div>
@@ -78,7 +100,7 @@ export function HeroSection() {
           {engines.map((name) => <span key={name} className="rounded-full border border-background/20 px-4 py-2 text-sm">{name}</span>)}
           <span className="rounded-full border border-dashed border-background/30 px-4 py-2 text-sm text-background/45">Google AI Overviews — planned</span>
           <span className="rounded-full bg-background px-4 py-2 text-sm text-foreground">any product, any category</span>
-          <span className="rounded-full bg-background px-4 py-2 text-sm text-foreground">results in about a minute</span>
+          <span className="rounded-full bg-background px-4 py-2 text-sm text-foreground">results in a few minutes</span>
         </div>
       </div>
     </section>

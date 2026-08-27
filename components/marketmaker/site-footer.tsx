@@ -33,8 +33,7 @@ export function SiteFooter() {
               </span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              Live access to the commercial web for your AI agent. No seats, no
-              contracts, pay for results.
+              Live, repeatable measurements of how answer engines recommend products in your category.
             </p>
           </div>
           {columns.map((col) => (

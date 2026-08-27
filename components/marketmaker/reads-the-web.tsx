@@ -56,8 +56,8 @@ export function ReadsTheWeb() {
               </div>
               <div className="flex flex-col gap-3">
                 <div className="flex items-end justify-between gap-4 border-b border-border pb-3">
-                  <span className="text-sm text-muted-foreground">Visibility</span>
-                  <strong className="font-mono text-2xl font-medium tabular-nums">37%</strong>
+                  <span className="text-sm text-muted-foreground">Named in</span>
+                  <strong className="font-mono text-2xl font-medium tabular-nums">3 of 20</strong>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-xs text-muted-foreground">
                   <span>Rankings · citations · competitors</span>
