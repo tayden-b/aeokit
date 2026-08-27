@@ -79,13 +79,13 @@ export function HeroSection() {
         <p className="mt-3 text-center text-xs text-muted-foreground">Example figures shown. The results return inside your agent.</p>
       </div>
 
-      <div id="sources" className="mt-12 border-y border-border bg-foreground py-10 text-background">
-        <p className="text-center font-mono text-[11px] tracking-[0.16em] text-background/60">MEASURED LIVE, ON THE ENGINES YOUR BUYERS ACTUALLY USE</p>
+      <div id="sources" className="mt-12 border-y border-border bg-muted/60 py-10">
+        <p className="text-center font-mono text-[11px] tracking-[0.16em] text-muted-foreground">MEASURED LIVE, ON THE ENGINES YOUR BUYERS ACTUALLY USE</p>
         <div className="mx-auto mt-6 flex max-w-5xl flex-wrap justify-center gap-2 px-6">
-          {engines.map((name) => <span key={name} className="rounded-full border border-background/20 px-4 py-2 text-sm">{name}</span>)}
-          <span className="rounded-full border border-dashed border-background/30 px-4 py-2 text-sm text-background/45">Google AI Overviews (planned)</span>
-          <span className="rounded-full bg-background px-4 py-2 text-sm text-foreground">one tool, any agent</span>
-          <span className="rounded-full bg-background px-4 py-2 text-sm text-foreground">results in a few minutes</span>
+          {engines.map((name) => <span key={name} className="rounded-full border border-border bg-background px-4 py-2 text-sm shadow-sm shadow-foreground/5">{name}</span>)}
+          <span className="rounded-full border border-dashed border-border px-4 py-2 text-sm text-muted-foreground">Google AI Overviews (planned)</span>
+          <span className="rounded-full bg-brand px-4 py-2 text-sm text-brand-foreground">one tool, any agent</span>
+          <span className="rounded-full border border-border bg-background px-4 py-2 text-sm">results in a few minutes</span>
         </div>
       </div>
     </section>
