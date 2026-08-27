@@ -1,32 +1,18 @@
 import { Button } from '@/components/ui/button'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Wrench } from 'lucide-react'
 
 export function FinalCta() {
   return (
-    <section className="border-t border-border bg-background py-24 md:py-32">
+    <section id="get-started" className="border-t border-border bg-background py-24 md:py-32">
       <div className="mx-auto max-w-3xl px-6 text-center">
-        <h2 className="text-4xl font-medium tracking-tight text-foreground text-balance md:text-5xl">
-          See what AI recommends — live
-        </h2>
-        <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground text-pretty">
-          Connect marketmaker.ai to your agent and run a measured probe across the answer engines your buyers use.
-        </p>
+        <span className="mx-auto flex size-11 items-center justify-center rounded-xl bg-brand text-brand-foreground"><Wrench className="size-5" aria-hidden="true" /></span>
+        <h2 className="mt-6 text-balance text-4xl font-medium tracking-tight text-foreground md:text-5xl">Give your agent live market evidence.</h2>
+        <p className="mx-auto mt-5 max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground">Add marketmaker as an MCP tool and ask your first question in the agent you already use. Nothing else to log into or learn.</p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button size="lg" className="h-12 gap-2 rounded-full bg-brand px-7 text-base text-brand-foreground hover:bg-brand/90">
-            Get started free
-            <ArrowRight className="size-4" />
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            className="h-12 rounded-full border-border px-7 text-base text-foreground hover:bg-muted"
-          >
-            Read the docs
-          </Button>
+          <Button size="lg" className="h-12 rounded-full px-7 text-base" render={<a href="#add-to-agent">Add to your agent <ArrowRight data-icon="inline-end" /></a>} />
+          <Button size="lg" variant="outline" className="h-12 rounded-full px-7 text-base" render={<a href="#">Read setup docs</a>} />
         </div>
-        <p className="mt-5 font-mono text-xs tracking-wide text-muted-foreground">
-          No credit card required · Cancel anytime
-        </p>
+        <p className="mt-5 font-mono text-xs tracking-wide text-muted-foreground">MCP-first · API available · first probe free</p>
       </div>
     </section>
   )
