@@ -99,3 +99,23 @@ fly scale count 0
 fly logs
 fly ssh console -C "sqlite3 /data/quota.db 'SELECT day, COUNT(*), ROUND(SUM(COALESCE(actual_usd,reserved_usd)),2) FROM reservations GROUP BY day;'"
 ```
+
+
+## Performance reality on shared CPUs (learned the hard way)
+
+Fly `shared-cpu` machines run on **burst credits**: an idle machine banks credits
+and can burst to a full core, so a normal probe finishes in ~60-90s. Sustained
+load drains the balance and the VM throttles to a few percent of a core — probes
+crawl, and even trivial requests starve. This surfaced during load-testing, not
+normal use; a demo-scale app that sits idle between probes lives on the fast path.
+
+Mitigations already built in:
+- Probes run in an **isolated subprocess** with a 240s hard kill — a slow or
+  wedged probe can never take the server down, and a killed probe returns the
+  caller's free quota.
+- The MCP flow is **two-phase** (`measure_product` returns a job id instantly;
+  `get_measurement` polls), so no HTTP response ever waits on the measurement.
+- SDK clients are cached per process; per-call construction OOMed a 512MB VM
+  (now 1GB).
+
+If probes are consistently slow without load, check credits: `fly machine status`.
