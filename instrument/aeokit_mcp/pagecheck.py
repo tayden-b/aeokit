@@ -113,9 +113,14 @@ def check_page(url: str, names: list[str]) -> PageCheck:
     return PageCheck(url, domain, True, names_found=found, title=title)
 
 
-def check_pages(urls: list[str], names: list[str], limit: int = 8) -> list[PageCheck]:
-    """Check the most-cited pages concurrently. Deduped, capped, failures reported."""
-    from concurrent.futures import ThreadPoolExecutor
+def check_pages(urls: list[str], names: list[str], limit: int = 8,
+                overall_timeout: float = 15.0) -> list[PageCheck]:
+    """Check the most-cited pages concurrently, under a hard wall-clock deadline.
+
+    getaddrinfo has no timeout, and a hanging DNS lookup once held a probe open for
+    minutes. Pages that don't finish inside the deadline are reported as skipped —
+    a partial source map delivered beats a complete one that never arrives."""
+    from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 
     seen, targets = set(), []
     for url in urls:
@@ -127,5 +132,22 @@ def check_pages(urls: list[str], names: list[str], limit: int = 8) -> list[PageC
             break
     if not targets:
         return []
-    with ThreadPoolExecutor(max_workers=min(6, len(targets))) as pool:
-        return list(pool.map(lambda u: check_page(u, names), targets))
+    import time as _t
+
+    deadline = _t.monotonic() + overall_timeout
+    pool = ThreadPoolExecutor(max_workers=min(6, len(targets)))
+    futures = {pool.submit(check_page, u, names): u for u in targets}
+    out: list[PageCheck] = []
+    pending = set(futures)
+    while pending and _t.monotonic() < deadline:
+        done, pending = wait(pending, timeout=max(0.1, deadline - _t.monotonic()),
+                             return_when=FIRST_COMPLETED)
+        for f in done:
+            out.append(f.result())
+    for f in pending:
+        u = futures[f]
+        from urllib.parse import urlparse
+        out.append(PageCheck(u, urlparse(u).netloc.replace("www.", ""), False,
+                             error="skipped: did not finish within the time budget"))
+    pool.shutdown(wait=False, cancel_futures=True)
+    return out

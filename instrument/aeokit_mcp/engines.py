@@ -62,6 +62,21 @@ ENGINES: dict[str, dict[str, str]] = {
 }
 
 
+_CLIENTS: dict[tuple, object] = {}
+_CLIENTS_LOCK = __import__("threading").Lock()
+
+
+def _cached(kind: str, key: str, factory):
+    """One SDK client per (provider, key) for the process. The SDK clients are
+    thread-safe; creating one per call ballooned memory until the VM OOM-killed
+    itself mid-probe."""
+    k = (kind, key[-8:])
+    with _CLIENTS_LOCK:
+        if k not in _CLIENTS:
+            _CLIENTS[k] = factory()
+        return _CLIENTS[k]
+
+
 @dataclass
 class EngineAnswer:
     text: str
@@ -91,7 +106,7 @@ def ask(engine: str, prompt: str) -> EngineAnswer:
 def _ask_openai(key: str, model: str, prompt: str) -> EngineAnswer:
     from openai import OpenAI
 
-    client = OpenAI(api_key=key)
+    client = _cached("openai", key, lambda: OpenAI(api_key=key))
     try:
         resp = call_with_retries(lambda: client.responses.create(
             model=model,
@@ -119,7 +134,7 @@ def _ask_openai(key: str, model: str, prompt: str) -> EngineAnswer:
 def _ask_anthropic(key: str, model: str, prompt: str) -> EngineAnswer:
     from anthropic import Anthropic
 
-    client = Anthropic(api_key=key)
+    client = _cached("anthropic", key, lambda: Anthropic(api_key=key))
 
     def _text_and_citations(resp) -> tuple[str, list[str]]:
         texts, urls = [], []
@@ -155,7 +170,7 @@ def _ask_gemini(key: str, model: str, prompt: str) -> EngineAnswer:
     from google import genai
     from google.genai import types
 
-    client = genai.Client(api_key=key)
+    client = _cached("gemini", key, lambda: genai.Client(api_key=key))
     try:
         resp = call_with_retries(lambda: client.models.generate_content(
             model=model,
@@ -186,7 +201,7 @@ def _ask_gemini(key: str, model: str, prompt: str) -> EngineAnswer:
 def _ask_perplexity(key: str, model: str, prompt: str) -> EngineAnswer:
     from openai import OpenAI
 
-    client = OpenAI(api_key=key, base_url="https://api.perplexity.ai")
+    client = _cached("perplexity", key, lambda: OpenAI(api_key=key, base_url="https://api.perplexity.ai"))
     resp = call_with_retries(lambda: client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],

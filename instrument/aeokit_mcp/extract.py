@@ -20,6 +20,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 from . import keys
+from .engines import _cached
 from .llm_util import call_with_retries
 
 load_dotenv()
@@ -81,7 +82,7 @@ def _extract_gemini(answer_text: str) -> Extraction:
     from google import genai
     from google.genai import types
 
-    client = genai.Client(api_key=keys.resolve("gemini").key)
+    client = _cached("gemini-judge", keys.resolve("gemini").key, lambda: genai.Client(api_key=keys.resolve("gemini").key))
     resp = call_with_retries(lambda: client.models.generate_content(
         model=GEMINI_EXTRACT_MODEL,
         contents=f"{EXTRACTION_SYSTEM}\n\nANSWER TO ANALYZE:\n{answer_text}",
@@ -96,7 +97,7 @@ def _extract_gemini(answer_text: str) -> Extraction:
 def _extract_openai(answer_text: str) -> Extraction:
     from openai import OpenAI
 
-    client = OpenAI(api_key=_openai_key())
+    client = _cached("openai-judge", _openai_key(), lambda: OpenAI(api_key=_openai_key()))
     completion = call_with_retries(lambda: client.chat.completions.parse(
         model=OPENAI_EXTRACT_MODEL,
         messages=[

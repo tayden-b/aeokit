@@ -37,10 +37,20 @@ from .stats import confidence_note, difference_is_real, diff_interval, min_n_for
 PROBE_VERSION = "probe-0.1"
 
 
+def _stage(msg: str) -> None:
+    """Wall-clock stage marker in server logs — the only way to see where a hosted
+    probe spends its time. Plain prints; uvicorn forwards them."""
+    import sys as _sys
+    import time as _tm
+
+    print(f"[probe-stage +{_tm.monotonic() % 100000:.1f}s] {msg}", flush=True, file=_sys.stderr)
+
+
 def run_probe(product: str, description: str, samples_per_question: int = 3,
               engine_list: list[str] | None = None, max_questions: int = 6,
               check_sources: bool = True) -> dict:
     """Run a live probe. Returns a GTM-facing report; persists runs as class 'probe'."""
+    _stage(f"start product={product!r}")
     available = keys.available()
     engines_used = [e for e in (engine_list or available) if e in available]
     if not engines_used:
@@ -49,6 +59,7 @@ def run_probe(product: str, description: str, samples_per_question: int = 3,
 
     # 1. Derive the buyer questions (never naming the product — see derive.py)
     derived = derive.derive_questions(product, description, n=max_questions + 2)
+    _stage(f"derived {len(derived.questions)} questions")
     questions = derived.questions[:max_questions]
     if not questions:
         return {"ok": False, "error": "Could not derive buyer questions for this product."}
@@ -100,7 +111,14 @@ def run_probe(product: str, description: str, samples_per_question: int = 3,
             for _ in range(samples_per_question)]
     # cap concurrency so we don't trip provider rate limits (429s would be slower
     # than running fewer at once)
-    with ThreadPoolExecutor(max_workers=min(12, len(jobs) or 1)) as pool:
+    _stage(f"sampling {len(jobs)} jobs")
+    import os as _os
+
+    # On a 1-core host, 12 concurrent TLS handshakes starve the event loop long
+    # enough that the transport's first keepalive misses its window and the proxy
+    # abandons the response stream. Fewer workers = slightly slower, actually delivered.
+    _workers = int(_os.getenv("AEOKIT_PROBE_WORKERS", "8"))
+    with ThreadPoolExecutor(max_workers=min(_workers, len(jobs) or 1)) as pool:
         futures = [pool.submit(_one_sample, e, q) for e, q in jobs]
         for fut in as_completed(futures):
             got = fut.result()
@@ -136,6 +154,7 @@ def run_probe(product: str, description: str, samples_per_question: int = 3,
                     judge_model=JUDGE_MODEL, judge_version=JUDGE_VERSION,
                 )
     conn.commit()
+    _stage(f"sampling done, {calls_made} calls")
 
     # 4. Aggregate — counts with denominators, never scores
     total_answers = sum(len(v) for v in per_engine.values())
@@ -186,7 +205,9 @@ def run_probe(product: str, description: str, samples_per_question: int = 3,
     if check_sources and citations:
         top_urls = [u for u, _ in Counter(citations).most_common(10)]
         rival_names = [p for p, _ in rival_counts.most_common(6)]
+        _stage(f"pagecheck {len(top_urls)} urls")
         checked = pagecheck.check_pages(top_urls, [product] + rival_names, limit=8)
+        _stage("pagecheck done")
         cite_counts = Counter(citations)
         for c in checked:
             if not c.ok:
@@ -262,6 +283,7 @@ def run_probe(product: str, description: str, samples_per_question: int = 3,
     })
     conn.commit()
     conn.close()
+    _stage("returning result")
 
     pct = round(named_total / total_answers * 100)
     headline = (f"{product} was named in {named_total} of {total_answers} AI answers ({pct}%) "

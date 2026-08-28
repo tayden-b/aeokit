@@ -16,7 +16,11 @@ Run:  python -m aeokit_mcp.hosted        (binds 0.0.0.0:$PORT, streamable-http)
 
 from __future__ import annotations
 
+import json
 import os
+import threading
+import time
+import uuid
 
 from mcp.server.mcpserver import MCPServer
 
@@ -32,9 +36,11 @@ server = MCPServer(
         "product's buyers would ask, puts them to real engines repeatedly, and reports "
         "where the product appears, who is recommended instead, and which cited web pages "
         "name competitors but not them.\n\n"
-        "Call `status` first to see free-probe availability. Call `measure_product` to run "
-        "one — it takes about a minute and costs real money, so never call it more than once "
-        "per request, and never call it speculatively.\n\n"
+        "Call `status` first to see free-probe availability. Measurements are two steps: "
+        "`measure_product` starts one and returns a job id immediately; wait about 45 "
+        "seconds, then call `get_measurement` with that id (if it is still running, wait "
+        "another 20-30 seconds and call again — do not spam it). A measurement costs real "
+        "money, so start at most one per user request, never speculatively.\n\n"
         "When relaying results: always give counts with their denominator ('named in 3 of "
         "20 answers'), never a bare percentage or invented score. Always pass on the "
         "caveats — the sample sizes are small and the tool says so honestly. Do not claim "
@@ -82,68 +88,118 @@ def status() -> dict:
     }
 
 
+# In-memory job table. One always-on machine; a portfolio-scale product does not
+# need durable job state — a lost job on redeploy releases its quota on restart.
+_JOBS: dict[str, dict] = {}
+_JOBS_LOCK = threading.Lock()
+
+
+def _run_job(job_id: str, product: str, description: str, samples: int,
+             engines: list[str], rid: int, est: float) -> None:
+    """Supervise one probe subprocess. The probe runs OUT of process so nothing it
+    does — thread wedges, native crashes, DNS hangs — can take the server down.
+    240s hard kill, then the caller's free probe is returned."""
+    import subprocess
+    import sys
+    import tempfile
+
+    out_path = tempfile.mktemp(suffix=".json", prefix=f"aeokit-{job_id}-")
+    result: dict
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-m", "aeokit_mcp.probe_cli", out_path,
+             product, description, str(samples), ",".join(engines)],
+            timeout=240, capture_output=True, text=True,
+        )
+        try:
+            with open(out_path) as f:
+                result = json.load(f)
+        except FileNotFoundError:
+            result = {"ok": False,
+                      "error": f"probe produced no result (exit {proc.returncode}): "
+                               f"{(proc.stderr or '')[-300:]}"}
+    except subprocess.TimeoutExpired:
+        result = {"ok": False, "error": "measurement exceeded its 4-minute limit and was stopped"}
+    finally:
+        try:
+            os.unlink(out_path)
+        except OSError:
+            pass
+
+    if result.get("ok"):
+        actual = (result.get("cost") or {}).get("estimated_usd", est)
+        quota.settle(rid, float(actual))
+        result.pop("cost", None)
+    else:
+        quota.release(rid)
+    with _JOBS_LOCK:
+        _JOBS[job_id] = {"state": "done" if result.get("ok") else "failed",
+                         "result": result, "error": result.get("error"),
+                         "ts": time.monotonic()}
+
+
 @server.tool()
-def measure_product(product: str, description: str, samples_per_question: int = 2) -> dict:
-    """Measure whether AI answer engines recommend a product, live, right now.
+def measure_product(product: str, description: str) -> dict:
+    """Start a live measurement of whether AI answer engines recommend a product.
 
-    Give the product name and one plain sentence about what it does and who buys it
-    (e.g. "Acme", "invoicing software for freelancers"). aeokit writes the buyer
-    questions itself — do NOT supply questions, and do not include the product name
-    in the description's positioning claims.
-
-    SLOW AND COSTLY: takes about a minute and spends real API budget. Call it once per
-    user request. If it returns a refusal, relay the reason rather than retrying."""
+    Give the product name and one plain sentence about what it does and who buys it.
+    Returns IMMEDIATELY with a job_id — the measurement runs for roughly 30-90
+    seconds. Wait about 45 seconds, then call `get_measurement` with the job_id.
+    Costs real money: start at most one per user request, never speculatively."""
     client = _client_key()
-    if not keys.available():
+    avail = keys.available()
+    engines = [e for e in ("openai", "gemini") if e in avail] or avail
+    if not engines:
         return {"ok": False, "error": "This aeokit instance has no engine keys configured.",
                 "contact": CONTACT}
 
-    samples_per_question = max(1, min(3, samples_per_question))
-    # Fast + cheap engines only for the hosted demo: gpt-4o-mini's web_search and
-    # Gemini grounding return in seconds; Claude's web_search runs 30-60s per call
-    # and pushed a probe past 3 minutes. Local BYOK installs can use all four.
-    avail = keys.available()
-    engines = [e for e in ("openai", "gemini") if e in avail] or avail
-    # per-engine rates, not a flat average — Perplexity and Claude are far cheaper
-    # than OpenAI/Gemini, and a flat rate would over-reserve and waste the daily cap
-    calls_per_engine = 4 * samples_per_question
+    samples = 2
+    calls_per_engine = 4 * samples
     est = sum(budget.estimate(e, calls_per_engine, calls_per_engine) for e in engines)
-
     allowed, refusal, rid = quota.reserve(client, est, note=product[:60])
     if not allowed:
-        return {
-            "ok": False,
-            "refused": refusal,
-            "status": quota.status(client),
-            "note": "This is a quota limit, not an error. Do not retry.",
-        }
+        return {"ok": False, "refused": refusal, "status": quota.status(client),
+                "note": "This is a quota limit, not an error. Do not retry."}
 
-    try:
-        result = probe.run_probe(
-            product=product,
-            description=description,
-            samples_per_question=samples_per_question,
-            engine_list=engines,
-            max_questions=4,
-            check_sources=True,
-        )
-    except Exception as e:
-        quota.release(rid)   # nothing was delivered — don't burn their free probe
-        return {"ok": False, "error": f"The measurement failed: {type(e).__name__}. "
-                                      "Your free probe has not been consumed.",
-                "contact": CONTACT}
+    job_id = uuid.uuid4().hex[:10]
+    with _JOBS_LOCK:
+        # keep the table tidy — drop finished jobs older than an hour
+        cutoff = time.monotonic() - 3600
+        for k in [k for k, v in _JOBS.items() if v.get("ts", 0) < cutoff]:
+            _JOBS.pop(k, None)
+        _JOBS[job_id] = {"state": "running", "ts": time.monotonic()}
+    threading.Thread(target=_run_job, daemon=True,
+                     args=(job_id, product, description, samples, engines, rid, est)).start()
+    return {
+        "ok": True,
+        "job_id": job_id,
+        "state": "running",
+        "measuring": {"product": product, "engines": engines,
+                      "questions": 4, "samples_per_question_per_engine": samples},
+        "next_step": ("Wait about 45 seconds, then call get_measurement with this job_id. "
+                      "If it is still running, wait another 20-30 seconds and call again."),
+    }
 
-    if not result.get("ok"):
-        quota.release(rid)   # a probe that returned no measurement is not a used probe
-        result.setdefault("note", "Your free probe was not consumed.")
-        return result
-    actual = (result.get("cost") or {}).get("estimated_usd", est)
-    quota.settle(rid, float(actual))
 
-    if result.get("ok"):
-        result.pop("cost", None)   # the visitor isn't paying; don't show them an invoice
-        result["your_quota"] = quota.status(client)
-    return result
+@server.tool()
+def get_measurement(job_id: str) -> dict:
+    """Fetch the result of a measurement started with `measure_product`.
+    If it is still running, wait 20-30 seconds before calling again — polling
+    faster does not speed it up."""
+    with _JOBS_LOCK:
+        job = _JOBS.get(job_id)
+    if not job:
+        return {"found": False, "error": "Unknown or expired job_id. Results are kept for "
+                                         "about an hour; start a new measurement if needed."}
+    if job["state"] == "running":
+        return {"found": True, "state": "running",
+                "advice": "Still measuring — wait 20-30 seconds and call again."}
+    if job["state"] == "failed":
+        return {"found": True, "state": "failed", "error": job.get("error"),
+                "note": "Your free probe was not consumed.", "contact": CONTACT}
+    out = dict(job["result"])
+    out["your_quota"] = quota.status(_client_key())
+    return out
 
 
 @server.tool()
