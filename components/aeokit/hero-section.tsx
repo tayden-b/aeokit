@@ -51,7 +51,7 @@ export function HeroSection() {
           <Button size="lg" className="rounded-full px-6" render={<a href="/setup">Add to your agent</a>} />
           <Button size="lg" variant="ghost" className="rounded-full px-5" render={<a href="#live-probe">See a live probe <ArrowUpRight data-icon="inline-end" /></a>} />
         </div>
-        <p className="mt-4 font-mono text-xs text-muted-foreground">No API keys · one free measurement a day · MCP-first</p>
+        <p className="mt-4 font-mono text-xs text-muted-foreground">One free test · then bring your own key · MCP-first</p>
       </div>
 
       <div id="live-probe" className="mx-auto max-w-3xl px-4 pb-3">

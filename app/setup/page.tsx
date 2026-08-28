@@ -11,10 +11,24 @@ import { CopyBlock } from '@/components/aeokit/copy-block'
 export const metadata: Metadata = {
   title: 'Add aeokit to your agent',
   description:
-    'Connect aeokit to Claude Code, Claude Desktop, or Cursor. No API keys, no account, no install.',
+    'One free test, no keys. Then bring your own key for unlimited measurements.',
 }
 
 const CLAUDE_CODE = `claude mcp add --transport http aeokit ${MCP_URL}`
+
+const BYOK_CLAUDE_CODE = `claude mcp add aeokit \\
+  --env AEOKIT_USER_OPENAI_API_KEY=sk-your-key \\
+  -- uvx aeokit-mcp`
+
+const BYOK_JSON = `{
+  "mcpServers": {
+    "aeokit": {
+      "command": "uvx",
+      "args": ["aeokit-mcp"],
+      "env": { "AEOKIT_USER_OPENAI_API_KEY": "sk-your-key" }
+    }
+  }
+}`
 
 const CLAUDE_DESKTOP = MCP_URL
 
@@ -42,32 +56,28 @@ export default function SetupPage() {
         </p>
 
         <section className="mt-12">
-          <h2 className="text-lg font-semibold">There is nothing to set up</h2>
+          <h2 className="text-lg font-semibold">Two ways in</h2>
           <ul className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground">
             <li>
-              <span className="font-medium text-foreground">No API keys.</span> aeokit runs the
-              measurements on its own engine accounts. You connect a URL and ask a question.
+              <span className="font-medium text-foreground">Try it free.</span> Connect the hosted
+              URL below — no keys, no account — and run a free test measurement on us.
             </li>
             <li>
-              <span className="font-medium text-foreground">No account, no card.</span> Every visitor
-              gets a free measurement each day. Measurements cost real money to run, so that free
-              tier is genuinely small while this is in early access.
-            </li>
-            <li>
-              <span className="font-medium text-foreground">Nothing to install.</span> It is a remote
-              MCP server — your agent connects over HTTPS.
+              <span className="font-medium text-foreground">Bring your own key for unlimited.</span>{' '}
+              Run aeokit locally with your own OpenAI or Gemini API key. You pay the engines
+              directly at cost — a measurement is a few cents — and there is no limit.
             </li>
           </ul>
         </section>
 
         <section className="mt-12">
-          <h2 className="text-lg font-semibold">Claude Code</h2>
+          <h2 className="text-lg font-semibold">Free test — Claude Code</h2>
           <p className="mt-2 text-sm text-muted-foreground">One command. No keys, no install.</p>
           <CopyBlock code={CLAUDE_CODE} />
         </section>
 
         <section className="mt-12">
-          <h2 className="text-lg font-semibold">Claude Desktop</h2>
+          <h2 className="text-lg font-semibold">Free test — Claude Desktop</h2>
           <p className="mt-2 text-sm text-muted-foreground">
 Settings → Connectors → Add custom connector, then paste this URL.
           </p>
@@ -75,12 +85,33 @@ Settings → Connectors → Add custom connector, then paste this URL.
         </section>
 
         <section className="mt-12">
-          <h2 className="text-lg font-semibold">Cursor</h2>
+          <h2 className="text-lg font-semibold">Free test — Cursor</h2>
           <p className="mt-2 text-sm text-muted-foreground">
 Settings → MCP → Add new global MCP server, then paste this into{' '}
             <code className="font-mono">~/.cursor/mcp.json</code>.
           </p>
           <CopyBlock code={CURSOR} language="json" />
+        </section>
+
+        <section className="mt-16">
+          <p className="font-mono text-xs tracking-[0.18em] text-primary uppercase">Unlimited</p>
+          <h2 className="mt-2 text-lg font-semibold">Bring your own key</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            One command. <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[13px]">uvx</code>{' '}
+            (ships with <a href="https://docs.astral.sh/uv/" className="underline underline-offset-4 hover:text-foreground">uv</a>)
+            fetches and runs aeokit — nothing to clone or install. Swap in your real key.
+          </p>
+          <CopyBlock code={BYOK_CLAUDE_CODE} />
+          <p className="mt-4 text-sm text-muted-foreground">
+            Claude Desktop or Cursor: same idea, as JSON config.
+          </p>
+          <CopyBlock code={BYOK_JSON} language="json" />
+          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+            One OpenAI <em>or</em> Gemini key is enough; add both (
+            <code className="font-mono text-[13px]">AEOKIT_USER_GEMINI_API_KEY</code>) to measure and
+            compare both engines. Your key stays in your own config — it is never sent to aeokit,
+            never accepted in chat, and never appears in results.
+          </p>
         </section>
 
         <section className="mt-16 rounded-xl border border-border bg-muted/30 p-6">
@@ -99,12 +130,12 @@ Settings → MCP → Add new global MCP server, then paste this into{' '}
         </section>
 
         <section className="mt-12">
-          <h2 className="text-lg font-semibold">About the free tier</h2>
+          <h2 className="text-lg font-semibold">Why the free tier is small</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            A single measurement puts dozens of real questions to real answer engines, which costs
-            real money. aeokit pays for that, so free usage is one measurement per visitor per day,
-            under a shared daily ceiling. When either limit is reached the tool says so plainly
-            rather than failing — and if you need more than that, get in touch and I&apos;ll open it up.
+            Every measurement puts dozens of real questions to real answer engines, which costs real
+            money — and on the hosted server, that money is ours. So the free tier is a taste: enough
+            to see exactly what you get. When you want more, bring your own key above and it costs
+            you cents, not a subscription.
           </p>
         </section>
 

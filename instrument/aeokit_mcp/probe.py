@@ -100,7 +100,7 @@ def run_probe(product: str, description: str, samples_per_question: int = 3,
             for _ in range(samples_per_question)]
     # cap concurrency so we don't trip provider rate limits (429s would be slower
     # than running fewer at once)
-    with ThreadPoolExecutor(max_workers=min(8, len(jobs) or 1)) as pool:
+    with ThreadPoolExecutor(max_workers=min(12, len(jobs) or 1)) as pool:
         futures = [pool.submit(_one_sample, e, q) for e, q in jobs]
         for fut in as_completed(futures):
             got = fut.result()

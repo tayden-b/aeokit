@@ -63,7 +63,7 @@ def status() -> dict:
     return {
         "service": "aeokit — live answer-engine measurement",
         "ready": bool(engines),
-        "engines_measured": engines,
+        "engines_measured": [e for e in ("openai", "gemini") if e in engines],
         "your_free_probes_remaining_today": q["free_probes_remaining_today"],
         "shared_daily_budget_remaining_usd": q["shared_budget_remaining_usd"],
         "resets": q["resets"],
@@ -99,7 +99,11 @@ def measure_product(product: str, description: str, samples_per_question: int = 
                 "contact": CONTACT}
 
     samples_per_question = max(1, min(3, samples_per_question))
-    engines = keys.available()
+    # Fast + cheap engines only for the hosted demo: gpt-4o-mini's web_search and
+    # Gemini grounding return in seconds; Claude's web_search runs 30-60s per call
+    # and pushed a probe past 3 minutes. Local BYOK installs can use all four.
+    avail = keys.available()
+    engines = [e for e in ("openai", "gemini") if e in avail] or avail
     # per-engine rates, not a flat average — Perplexity and Claude are far cheaper
     # than OpenAI/Gemini, and a flat rate would over-reserve and waste the daily cap
     calls_per_engine = 4 * samples_per_question
