@@ -20,7 +20,7 @@ import os
 
 from mcp.server.mcpserver import MCPServer
 
-from . import keys, probe, quota
+from . import budget, keys, probe, quota
 
 CONTACT = os.getenv("AEOKIT_CONTACT", "hello@aeokit.ai")
 
@@ -100,7 +100,10 @@ def measure_product(product: str, description: str, samples_per_question: int = 
 
     samples_per_question = max(1, min(3, samples_per_question))
     engines = keys.available()
-    est = 0.03 * 6 * len(engines) * samples_per_question  # questions x engines x samples
+    # per-engine rates, not a flat average — Perplexity and Claude are far cheaper
+    # than OpenAI/Gemini, and a flat rate would over-reserve and waste the daily cap
+    calls_per_engine = 6 * samples_per_question
+    est = sum(budget.estimate(e, calls_per_engine, calls_per_engine) for e in engines)
 
     allowed, refusal, rid = quota.reserve(client, est, note=product[:60])
     if not allowed:
