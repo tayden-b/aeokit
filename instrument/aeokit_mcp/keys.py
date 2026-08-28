@@ -27,6 +27,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Groq is deliberately NOT here. It is a utility provider for writing questions and
+# judging answers, not an answer engine anyone's buyers use — measuring it would
+# tell you nothing about your market. See UTILITY_ENV.
+UTILITY_ENV = {"groq": "GROQ_API_KEY"}
+
 ENGINE_ENV = {
     "openai": "OPENAI_API_KEY",
     "anthropic": "ANTHROPIC_API_KEY",
@@ -100,3 +105,15 @@ BYOK_INSTRUCTIONS = (
     "sent to aeokit's operator, never stored in the corpus, and never appear "
     "in tool output."
 )
+
+
+def utility_provider() -> tuple[str, str] | None:
+    """Cheapest available provider for the non-measurement calls (writing buyer
+    questions, judging answers). Groq's free tier covers these entirely, so prefer
+    it and keep the paid budget for actual engine measurement."""
+    for name, env in UTILITY_ENV.items():
+        for prefix in ("AEOKIT_USER_", ""):
+            key = os.getenv(f"{prefix}{env}" if prefix else env)
+            if key:
+                return name, key
+    return None

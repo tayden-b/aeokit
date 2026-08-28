@@ -21,6 +21,17 @@ fly secrets set \
   AEOKIT_CONTACT=you@example.com
 ```
 
+### Free-tier levers
+
+Set `GROQ_API_KEY` and the two non-measurement calls — writing buyer questions and
+judging answers — run on Groq's free tier (14,400 req/day, no card) instead of
+costing anything. The measurement calls themselves cannot be substituted: measuring
+what ChatGPT recommends means calling ChatGPT.
+
+```bash
+fly secrets set GROQ_API_KEY=gsk_...
+```
+
 ### Adding the other two engines
 
 `ANTHROPIC_API_KEY` and `PERPLEXITY_API_KEY` are optional but recommended — they are
@@ -28,8 +39,15 @@ the *cheap* engines, and they roughly double coverage for ~30% more cost per pro
 
 | Engines | Cost/probe | Probes/day at a $5 cap |
 |---|---|---|
-| OpenAI + Gemini | ~$1.14 | 3 |
-| all four | ~$1.50 | 2 |
+| OpenAI only | ~$0.04 | ~89 |
+| OpenAI + Gemini | ~$0.68 | ~5 |
+| all four | ~$1.03 | ~3 |
+| all four, Gemini inside its free quota | ~$0.39 | ~9 |
+
+Gemini dominates the bill because grounding is $35/1k **beyond** the free
+1,500 prompts/day. Below that line it is free, which is where a small deployment
+will live. OpenAI is now the cheap one: the non-preview `web_search` tool bills
+search content as a flat ~8k input tokens rather than the legacy per-search fee.
 
 Perplexity is the single most relevant engine for AEO — it is an answer engine by
 design, always search-grounded, and the cheapest per call.

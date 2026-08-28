@@ -36,15 +36,23 @@ def _ledger_path() -> Path:
 
 LEDGER_PATH = _ledger_path()
 
-# rough USD per grounded answer call (search fee + typical tokens), and per judge call
+# USD per grounded answer call. These are ESTIMATES from published rates (Aug 2026)
+# and have a history of being wrong — an earlier version priced OpenAI at $0.027 by
+# assuming the legacy per-search fee, when the non-preview web_search tool actually
+# bills search content as a flat ~8k input tokens (~20x cheaper). Verify against the
+# provider dashboards before quoting any of this; the reserve path deliberately
+# over-estimates, so being wrong here costs quota, not money.
 COST_PER_CALL = {
-    "openai": 0.027,
-    "gemini": 0.036,
-    "anthropic": 0.013,
-    "perplexity": 0.006,
+    "openai": 0.0020,      # gpt-4o-mini + web_search: ~8k input tokens + output
+    "gemini": 0.0350,      # $35/1k grounded prompts BEYOND the free 1,500/day
+    "anthropic": 0.0130,   # $10/1k searches + tokens
+    "perplexity": 0.0060,  # sonar: tokens + built-in search
 }
-COST_PER_JUDGE_CALL = 0.0003
-DEFAULT_COST = 0.03
+# Gemini grounding is free for the first 1,500 prompts/day on 2.5 models, so in
+# practice a small deployment pays ~nothing for it. We still reserve at the paid
+# rate — over-reserving is the safe direction.
+COST_PER_JUDGE_CALL = 0.0003   # ~0 when the judge runs on a free tier (Groq/Gemini)
+DEFAULT_COST = 0.01
 
 PER_PROBE_CALL_CAP = 60          # max engine calls in one probe request
 DAILY_HOUSE_USD_CAP = 5.00       # max spend on the operator's own keys per day

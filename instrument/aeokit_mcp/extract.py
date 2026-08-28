@@ -26,6 +26,7 @@ load_dotenv()
 
 JUDGE_VERSION = "judge-0.1"   # frozen per spec version; golden-set kappa pending (SPEC.md §4)
 JUDGE_MODEL = "gpt-4o-mini"
+GROQ_JUDGE_MODEL = os.getenv("AEOKIT_GROQ_MODEL", "llama-3.3-70b-versatile")
 
 OPENAI_EXTRACT_MODEL = JUDGE_MODEL
 GEMINI_EXTRACT_MODEL = "gemini-2.5-flash-lite"  # cheap/fast, free tier, structured output
@@ -114,8 +115,31 @@ def _openai_key() -> str:
     return ks.key
 
 
+def _extract_groq(answer_text: str, api_key: str) -> Extraction:
+    """Judge on Groq's free tier — same forced schema, zero cost."""
+    from openai import OpenAI
+
+    client = OpenAI(api_key=api_key, base_url="https://api.groq.com/openai/v1")
+    completion = call_with_retries(lambda: client.chat.completions.parse(
+        model=GROQ_JUDGE_MODEL,
+        messages=[
+            {"role": "system", "content": EXTRACTION_SYSTEM},
+            {"role": "user", "content": answer_text},
+        ],
+        response_format=Extraction,
+    ))
+    return completion.choices[0].message.parsed
+
+
 def extract(answer_text: str) -> Extraction:
-    """Run structured extraction: OpenAI (fast/cheap) by default, else Gemini."""
+    """Judge an answer. Prefers a free utility provider (Groq) so the paid budget
+    goes to measurement; falls back to OpenAI, then Gemini."""
+    util = keys.utility_provider()
+    if util and util[0] == "groq":
+        try:
+            return _extract_groq(answer_text, util[1])
+        except Exception:
+            pass  # fall through to a paid provider rather than failing the probe
     if keys.resolve("openai"):
         return _extract_openai(answer_text)
     if keys.resolve("gemini"):

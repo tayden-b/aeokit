@@ -26,6 +26,8 @@ from .llm_util import call_with_retries
 
 DERIVE_MODEL = "gpt-4o-mini"
 GEMINI_DERIVE_MODEL = "gemini-2.5-flash-lite"
+import os
+GROQ_DERIVE_MODEL = os.getenv("AEOKIT_GROQ_MODEL", "llama-3.3-70b-versatile")
 DERIVATION_VERSION = "derive-0.1"
 
 INTENTS = {
@@ -104,13 +106,32 @@ def _derive_gemini(prompt: str) -> DerivedSet:
     return resp.parsed
 
 
+def _derive_groq(prompt: str, api_key: str) -> DerivedSet:
+    """Write buyer questions on Groq's free tier."""
+    from openai import OpenAI
+
+    client = OpenAI(api_key=api_key, base_url="https://api.groq.com/openai/v1")
+    completion = call_with_retries(lambda: client.chat.completions.parse(
+        model=GROQ_DERIVE_MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        response_format=DerivedSet,
+    ))
+    return completion.choices[0].message.parsed
+
+
 def derive_questions(product: str, description: str, n: int = 8) -> DerivedSet:
     """Derive a buyer-question set for an arbitrary product. One cheap LLM call,
     on whichever key the user has — never a hard dependency on one provider."""
     intents_text = "\n".join(f"- {k}: {v}" for k, v in INTENTS.items())
     prompt = PROMPT.format(product=product, description=description, n=n, intents=intents_text)
 
-    if keys.resolve("openai"):
+    util = keys.utility_provider()
+    if util and util[0] == "groq":
+        try:
+            result = _derive_groq(prompt, util[1])
+        except Exception:
+            result = _derive_openai(prompt) if keys.resolve("openai") else _derive_gemini(prompt)
+    elif keys.resolve("openai"):
         result = _derive_openai(prompt)
     elif keys.resolve("gemini"):
         result = _derive_gemini(prompt)
