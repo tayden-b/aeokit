@@ -27,7 +27,7 @@ from .llm_util import call_with_retries
 DERIVE_MODEL = "gpt-4o-mini"
 GEMINI_DERIVE_MODEL = "gemini-2.5-flash-lite"
 import os
-GROQ_DERIVE_MODEL = os.getenv("AEOKIT_GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_DERIVE_MODEL = os.getenv("AEOKIT_GROQ_MODEL", "openai/gpt-oss-120b")
 DERIVATION_VERSION = "derive-0.1"
 
 INTENTS = {
@@ -126,16 +126,17 @@ def derive_questions(product: str, description: str, n: int = 8) -> DerivedSet:
     prompt = PROMPT.format(product=product, description=description, n=n, intents=intents_text)
 
     util = keys.utility_provider()
+    result = None
     if util and util[0] == "groq":
         try:
             result = _derive_groq(prompt, util[1])
         except Exception:
-            result = _derive_openai(prompt) if keys.resolve("openai") else _derive_gemini(prompt)
-    elif keys.resolve("openai"):
+            result = None   # free tier unavailable or model changed — fall through, never fail here
+    if result is None and keys.resolve("openai"):
         result = _derive_openai(prompt)
-    elif keys.resolve("gemini"):
+    elif result is None and keys.resolve("gemini"):
         result = _derive_gemini(prompt)
-    else:
+    if result is None:
         raise RuntimeError(
             "Question derivation needs an OpenAI or Gemini key. Add one to your MCP "
             "server config as AEOKIT_USER_OPENAI_API_KEY or AEOKIT_USER_GEMINI_API_KEY."

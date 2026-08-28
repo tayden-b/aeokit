@@ -1,26 +1,31 @@
-app = "aeokit"
-primary_region = "iad"
+# fly.toml app configuration file generated for aeokit on 2026-08-28T09:45:00-05:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'aeokit'
+primary_region = 'iad'
 
 [build]
-
 [env]
-  AEOKIT_DATA_DIR = "/data"
-  PORT = "8080"
-  # Hard ceiling on what strangers can spend of yours, per UTC day.
-  AEOKIT_DAILY_USD_CAP = "5.00"
-  AEOKIT_FREE_PROBES_PER_CLIENT = "1"
+  AEOKIT_DAILY_USD_CAP = '5.00'
+  AEOKIT_DATA_DIR = '/data'
+  AEOKIT_FREE_PROBES_PER_CLIENT = '1'
+  PORT = '8080'
+
+[[mounts]]
+  source = 'aeokit_data'
+  destination = '/data'
 
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = "suspend"
+  auto_stop_machines = 'suspend'
   auto_start_machines = true
   min_machines_running = 0
 
-[[mounts]]
-  source = "aeokit_data"
-  destination = "/data"
-
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "512mb"
+  size = 'shared-cpu-1x'
+  memory = '256mb'
+  cpus = 1
+  memory_mb = 256

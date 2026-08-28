@@ -26,7 +26,7 @@ load_dotenv()
 
 JUDGE_VERSION = "judge-0.1"   # frozen per spec version; golden-set kappa pending (SPEC.md §4)
 JUDGE_MODEL = "gpt-4o-mini"
-GROQ_JUDGE_MODEL = os.getenv("AEOKIT_GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_JUDGE_MODEL = os.getenv("AEOKIT_GROQ_MODEL", "openai/gpt-oss-20b")
 
 OPENAI_EXTRACT_MODEL = JUDGE_MODEL
 GEMINI_EXTRACT_MODEL = "gemini-2.5-flash-lite"  # cheap/fast, free tier, structured output
