@@ -22,6 +22,7 @@ import datetime as dt
 import json
 import uuid
 from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from . import budget
 from . import db
@@ -80,44 +81,61 @@ def run_probe(product: str, description: str, samples_per_question: int = 3,
     grounding_modes: Counter = Counter()
 
     target = normalize(product)
-    for q in questions:
-        for engine in engines_used:
-            for _ in range(samples_per_question):
-                try:
-                    answer = ask(engine, q.question)
-                except Exception:
-                    continue
-                calls_made += 1
-                grounding_modes[answer.grounding_mode] += 1
-                run_id = db.insert_run(
-                    conn, ts=now.isoformat(), run_date=now.strftime("%Y-%m-%d"),
-                    engine=engine, model=answer.model, grounding_mode=answer.grounding_mode,
-                    temperature=0.7, category=derived.category, capability=q.question[:80],
-                    prompt_set=f"derived:{derive.DERIVATION_VERSION}", variant=q.id,
-                    prompt=q.question, spec_version=PROBE_VERSION, raw_answer=answer.text,
-                    run_class="probe", session_id=session_id,
+
+    def _one_sample(engine: str, q):
+        """Ask one engine one question once, and judge the answer. Network-bound,
+        so these run concurrently — serially this took minutes, which is the
+        difference between a demo someone waits for and one they abandon."""
+        try:
+            answer = ask(engine, q.question)
+        except Exception:
+            return None
+        try:
+            ext = extract(answer.text)
+        except Exception:
+            ext = None
+        return engine, q, answer, ext
+
+    jobs = [(engine, q) for q in questions for engine in engines_used
+            for _ in range(samples_per_question)]
+    # cap concurrency so we don't trip provider rate limits (429s would be slower
+    # than running fewer at once)
+    with ThreadPoolExecutor(max_workers=min(8, len(jobs) or 1)) as pool:
+        futures = [pool.submit(_one_sample, e, q) for e, q in jobs]
+        for fut in as_completed(futures):
+            got = fut.result()
+            if not got:
+                continue
+            engine, q, answer, ext = got
+            calls_made += 1
+            grounding_modes[answer.grounding_mode] += 1
+            run_id = db.insert_run(
+                conn, ts=now.isoformat(), run_date=now.strftime("%Y-%m-%d"),
+                engine=engine, model=answer.model, grounding_mode=answer.grounding_mode,
+                temperature=0.7, category=derived.category, capability=q.question[:80],
+                prompt_set=f"derived:{derive.DERIVATION_VERSION}", variant=q.id,
+                prompt=q.question, spec_version=PROBE_VERSION, raw_answer=answer.text,
+                run_class="probe", session_id=session_id,
+            )
+            for url in answer.citations:
+                db.insert_citation(conn, run_id=run_id, url=url)
+                citations.append(url)
+            if ext is None:
+                continue
+            names = [normalize(p.name) for p in ext.products]
+            per_engine[engine].append(set(names))
+            primaries = [normalize(p.name) for p in ext.products if p.role == "primary"]
+            if len(primaries) == 1 and primaries[0] == target:
+                per_engine_sole[engine] += 1
+            for p in ext.products:
+                if normalize(p.name) == target:
+                    attributes.update(a.strip().lower() for a in p.attributes if a.strip())
+                db.insert_routing(
+                    conn, run_id=run_id, product=p.name, role=p.role, position=p.position,
+                    sentiment=p.sentiment, attributes=json.dumps(p.attributes),
+                    judge_model=JUDGE_MODEL, judge_version=JUDGE_VERSION,
                 )
-                for url in answer.citations:
-                    db.insert_citation(conn, run_id=run_id, url=url)
-                    citations.append(url)
-                try:
-                    ext = extract(answer.text)
-                except Exception:
-                    continue
-                names = [normalize(p.name) for p in ext.products]
-                per_engine[engine].append(set(names))
-                primaries = [normalize(p.name) for p in ext.products if p.role == "primary"]
-                if len(primaries) == 1 and primaries[0] == target:
-                    per_engine_sole[engine] += 1
-                for p in ext.products:
-                    if normalize(p.name) == target:
-                        attributes.update(a.strip().lower() for a in p.attributes if a.strip())
-                    db.insert_routing(
-                        conn, run_id=run_id, product=p.name, role=p.role, position=p.position,
-                        sentiment=p.sentiment, attributes=json.dumps(p.attributes),
-                        judge_model=JUDGE_MODEL, judge_version=JUDGE_VERSION,
-                    )
-        conn.commit()
+    conn.commit()
 
     # 4. Aggregate — counts with denominators, never scores
     total_answers = sum(len(v) for v in per_engine.values())

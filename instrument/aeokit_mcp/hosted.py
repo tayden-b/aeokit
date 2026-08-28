@@ -33,7 +33,7 @@ server = MCPServer(
         "where the product appears, who is recommended instead, and which cited web pages "
         "name competitors but not them.\n\n"
         "Call `status` first to see free-probe availability. Call `measure_product` to run "
-        "one — it takes 1-3 minutes and costs real money, so never call it more than once "
+        "one — it takes about a minute and costs real money, so never call it more than once "
         "per request, and never call it speculatively.\n\n"
         "When relaying results: always give counts with their denominator ('named in 3 of "
         "20 answers'), never a bare percentage or invented score. Always pass on the "
@@ -78,12 +78,12 @@ def status() -> dict:
             "Measurements run on real engine APIs paid for by aeokit, which is why free "
             f"usage is capped. Need more than the free tier? Email {CONTACT}."
         ),
-        "how_long": "a live measurement takes roughly 1-3 minutes",
+        "how_long": "a live measurement takes roughly 45-90 seconds",
     }
 
 
 @server.tool()
-def measure_product(product: str, description: str, samples_per_question: int = 3) -> dict:
+def measure_product(product: str, description: str, samples_per_question: int = 2) -> dict:
     """Measure whether AI answer engines recommend a product, live, right now.
 
     Give the product name and one plain sentence about what it does and who buys it
@@ -91,7 +91,7 @@ def measure_product(product: str, description: str, samples_per_question: int = 
     questions itself — do NOT supply questions, and do not include the product name
     in the description's positioning claims.
 
-    SLOW AND COSTLY: takes 1-3 minutes and spends real API budget. Call it once per
+    SLOW AND COSTLY: takes about a minute and spends real API budget. Call it once per
     user request. If it returns a refusal, relay the reason rather than retrying."""
     client = _client_key()
     if not keys.available():
@@ -102,7 +102,7 @@ def measure_product(product: str, description: str, samples_per_question: int = 
     engines = keys.available()
     # per-engine rates, not a flat average — Perplexity and Claude are far cheaper
     # than OpenAI/Gemini, and a flat rate would over-reserve and waste the daily cap
-    calls_per_engine = 6 * samples_per_question
+    calls_per_engine = 4 * samples_per_question
     est = sum(budget.estimate(e, calls_per_engine, calls_per_engine) for e in engines)
 
     allowed, refusal, rid = quota.reserve(client, est, note=product[:60])
@@ -120,7 +120,7 @@ def measure_product(product: str, description: str, samples_per_question: int = 
             description=description,
             samples_per_question=samples_per_question,
             engine_list=engines,
-            max_questions=6,
+            max_questions=4,
             check_sources=True,
         )
     except Exception as e:

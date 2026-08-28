@@ -114,13 +114,18 @@ def check_page(url: str, names: list[str]) -> PageCheck:
 
 
 def check_pages(urls: list[str], names: list[str], limit: int = 8) -> list[PageCheck]:
-    """Check the most-cited pages. Deduped by URL, capped, failures reported not raised."""
-    seen, out = set(), []
+    """Check the most-cited pages concurrently. Deduped, capped, failures reported."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    seen, targets = set(), []
     for url in urls:
         if url in seen:
             continue
         seen.add(url)
-        out.append(check_page(url, names))
-        if len(out) >= limit:
+        targets.append(url)
+        if len(targets) >= limit:
             break
-    return out
+    if not targets:
+        return []
+    with ThreadPoolExecutor(max_workers=min(6, len(targets))) as pool:
+        return list(pool.map(lambda u: check_page(u, names), targets))
