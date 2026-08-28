@@ -18,6 +18,7 @@ these to anyone.
 from __future__ import annotations
 
 import datetime as dt
+import os
 import sqlite3
 from pathlib import Path
 
@@ -54,6 +55,11 @@ COST_PER_CALL = {
 COST_PER_JUDGE_CALL = 0.0003   # ~0 when the judge runs on a free tier (Groq/Gemini)
 DEFAULT_COST = 0.01
 
+# Gemini grounding is free for the first N prompts per day. Reserving those at the
+# paid rate would burn the daily cap on spend that never happens, so we count the
+# day's Gemini calls and price only the overflow.
+GEMINI_FREE_GROUNDED_PER_DAY = int(os.getenv("AEOKIT_GEMINI_FREE_QUOTA", "1500"))
+
 PER_PROBE_CALL_CAP = 60          # max engine calls in one probe request
 DAILY_HOUSE_USD_CAP = 5.00       # max spend on the operator's own keys per day
 
@@ -79,9 +85,25 @@ def _conn() -> sqlite3.Connection:
     return conn
 
 
+def calls_today(engine: str) -> int:
+    day = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d")
+    conn = _conn()
+    row = conn.execute(
+        "SELECT COALESCE(SUM(calls), 0) FROM spend WHERE day = ? AND engine = ?", (day, engine)
+    ).fetchone()
+    conn.close()
+    return int(row[0])
+
+
 def estimate(engine: str, calls: int, judge_calls: int = 0) -> float:
+    """Estimated USD for `calls` on an engine, accounting for free daily quota."""
+    billable = calls
+    if engine == "gemini":
+        used = calls_today("gemini")
+        free_left = max(0, GEMINI_FREE_GROUNDED_PER_DAY - used)
+        billable = max(0, calls - free_left)
     return round(
-        calls * COST_PER_CALL.get(engine, DEFAULT_COST) + judge_calls * COST_PER_JUDGE_CALL, 4
+        billable * COST_PER_CALL.get(engine, DEFAULT_COST) + judge_calls * COST_PER_JUDGE_CALL, 4
     )
 
 

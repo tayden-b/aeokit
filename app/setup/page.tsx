@@ -1,4 +1,8 @@
 import type { Metadata } from 'next'
+
+// The live MCP endpoint. Uses the free Fly subdomain until aeokit.ai is pointed at it —
+// change this one constant and every command on the page updates.
+const MCP_URL = process.env.NEXT_PUBLIC_MCP_URL ?? 'https://aeokit.fly.dev/mcp'
 import Link from 'next/link'
 import { SiteHeader } from '@/components/aeokit/site-header'
 import { SiteFooter } from '@/components/aeokit/site-footer'
@@ -10,13 +14,13 @@ export const metadata: Metadata = {
     'Connect aeokit to Claude Code, Claude Desktop, or Cursor. No API keys, no account, no install.',
 }
 
-const CLAUDE_CODE = `claude mcp add --transport http aeokit https://mcp.aeokit.ai/mcp`
+const CLAUDE_CODE = `claude mcp add --transport http aeokit ${MCP_URL}`
 
-const CLAUDE_DESKTOP = `https://mcp.aeokit.ai/mcp`
+const CLAUDE_DESKTOP = MCP_URL
 
 const CURSOR = `{
   "mcpServers": {
-    "aeokit": { "url": "https://mcp.aeokit.ai/mcp" }
+    "aeokit": { "url": "${MCP_URL}" }
   }
 }`
 
