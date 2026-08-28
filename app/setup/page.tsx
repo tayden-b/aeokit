@@ -7,32 +7,16 @@ import { CopyBlock } from '@/components/aeokit/copy-block'
 export const metadata: Metadata = {
   title: 'Add aeokit to your agent',
   description:
-    'Connect aeokit to Claude Code, Claude Desktop, or Cursor in one command. Runs on your own API keys.',
+    'Connect aeokit to Claude Code, Claude Desktop, or Cursor. No API keys, no account, no install.',
 }
 
-const CLAUDE_CODE = `claude mcp add aeokit \\
-  --env AEOKIT_USER_OPENAI_API_KEY=sk-your-key \\
-  -- uvx aeokit-mcp`
+const CLAUDE_CODE = `claude mcp add --transport http aeokit https://mcp.aeokit.ai/mcp`
 
-const CLAUDE_DESKTOP = `{
-  "mcpServers": {
-    "aeokit": {
-      "command": "uvx",
-      "args": ["aeokit-mcp"],
-      "env": {
-        "AEOKIT_USER_OPENAI_API_KEY": "sk-your-key"
-      }
-    }
-  }
-}`
+const CLAUDE_DESKTOP = `https://mcp.aeokit.ai/mcp`
 
 const CURSOR = `{
   "mcpServers": {
-    "aeokit": {
-      "command": "uvx",
-      "args": ["aeokit-mcp"],
-      "env": { "AEOKIT_USER_OPENAI_API_KEY": "sk-your-key" }
-    }
+    "aeokit": { "url": "https://mcp.aeokit.ai/mcp" }
   }
 }`
 
@@ -54,93 +38,34 @@ export default function SetupPage() {
         </p>
 
         <section className="mt-12">
-          <h2 className="text-lg font-semibold">Before you start</h2>
+          <h2 className="text-lg font-semibold">There is nothing to set up</h2>
           <ul className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground">
             <li>
-              <span className="font-medium text-foreground">
-                You do not need all four keys — one is enough to start.
-              </span>{' '}
-              The minimum is a single OpenAI <em>or</em> Gemini key: either one can both write your
-              buyer questions and read the answers. Every key you add is one more engine measured.
+              <span className="font-medium text-foreground">No API keys.</span> aeokit runs the
+              measurements on its own engine accounts. You connect a URL and ask a question.
             </li>
             <li>
-              <span className="font-medium text-foreground">Probes run on your key.</span> aeokit adds
-              nothing on top; you pay the engines directly. A typical probe is a few dozen calls,
-              roughly the price of a coffee.
+              <span className="font-medium text-foreground">No account, no card.</span> Every visitor
+              gets a free measurement each day. Measurements cost real money to run, so that free
+              tier is genuinely small while this is in early access.
             </li>
             <li>
-              <span className="font-medium text-foreground">
-                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[13px]">uvx</code> runs it
-                without installing anything.
-              </span>{' '}
-              It ships with{' '}
-              <a
-                href="https://docs.astral.sh/uv/"
-                className="underline underline-offset-4 hover:text-foreground"
-              >
-                uv
-              </a>
-              . No clone, no virtualenv, no Python setup.
+              <span className="font-medium text-foreground">Nothing to install.</span> It is a remote
+              MCP server — your agent connects over HTTPS.
             </li>
           </ul>
         </section>
 
-        <section className="mt-10">
-          <h3 className="text-sm font-semibold">What each key adds</h3>
-          <div className="mt-3 overflow-x-auto rounded-xl border border-border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/40 text-left">
-                <tr>
-                  <th className="px-4 py-2.5 font-medium">Key</th>
-                  <th className="px-4 py-2.5 font-medium">What it gets you</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                <tr>
-                  <td className="px-4 py-2.5 font-mono text-[13px]">OpenAI</td>
-                  <td className="px-4 py-2.5 text-muted-foreground">
-                    Measures ChatGPT, and can write questions and read answers
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2.5 font-mono text-[13px]">Gemini</td>
-                  <td className="px-4 py-2.5 text-muted-foreground">
-                    Measures Gemini, and can write questions and read answers
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2.5 font-mono text-[13px]">Anthropic</td>
-                  <td className="px-4 py-2.5 text-muted-foreground">Measures Claude</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2.5 font-mono text-[13px]">Perplexity</td>
-                  <td className="px-4 py-2.5 text-muted-foreground">
-                    Measures Perplexity, always search-grounded
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            One key works. Two is the real recommendation — the most useful thing aeokit finds is
-            engines <em>disagreeing</em> about who to recommend, and that needs at least two to
-            compare. Add keys by putting more{' '}
-            <code className="font-mono text-[13px]">AEOKIT_USER_*_API_KEY</code> entries in the same
-            config.
-          </p>
-        </section>
-
         <section className="mt-12">
           <h2 className="text-lg font-semibold">Claude Code</h2>
-          <p className="mt-2 text-sm text-muted-foreground">One command in your terminal.</p>
+          <p className="mt-2 text-sm text-muted-foreground">One command. No keys, no install.</p>
           <CopyBlock code={CLAUDE_CODE} />
         </section>
 
         <section className="mt-12">
           <h2 className="text-lg font-semibold">Claude Desktop</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Settings → Developer → Edit Config, then add the <code className="font-mono">aeokit</code>{' '}
-            entry and restart Claude.
+Settings → Connectors → Add custom connector, then paste this URL.
           </p>
           <CopyBlock code={CLAUDE_DESKTOP} language="json" />
         </section>
@@ -148,7 +73,7 @@ export default function SetupPage() {
         <section className="mt-12">
           <h2 className="text-lg font-semibold">Cursor</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Settings → MCP → Add new global MCP server, then paste this into{' '}
+Settings → MCP → Add new global MCP server, then paste this into{' '}
             <code className="font-mono">~/.cursor/mcp.json</code>.
           </p>
           <CopyBlock code={CURSOR} language="json" />
@@ -158,8 +83,8 @@ export default function SetupPage() {
           <h2 className="text-lg font-semibold">Then ask your agent this</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             Replace with your own product and who buys it. That&apos;s the whole interface. If
-            anything looks wrong, ask your agent to <code className="font-mono text-[13px]">check_setup</code>{' '}
-            first — it reports which engines you can measure before anything is spent.
+            anything looks wrong, ask your agent to <code className="font-mono text-[13px]">status</code>{' '}
+            first — it reports how many free measurements you have left before anything runs.
           </p>
           <CopyBlock code={FIRST_ASK} />
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
@@ -170,12 +95,12 @@ export default function SetupPage() {
         </section>
 
         <section className="mt-12">
-          <h2 className="text-lg font-semibold">About your keys</h2>
+          <h2 className="text-lg font-semibold">About the free tier</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Keys are read only from the MCP server&apos;s environment — the config above. aeokit never
-            accepts a key as a tool argument, because anything passed as a tool argument is written
-            into the conversation transcript and your model&apos;s context. Your keys stay in your own
-            config file, are never sent to us, and never appear in any result.
+            A single measurement puts dozens of real questions to real answer engines, which costs
+            real money. aeokit pays for that, so free usage is one measurement per visitor per day,
+            under a shared daily ceiling. When either limit is reached the tool says so plainly
+            rather than failing — and if you need more than that, get in touch and I&apos;ll open it up.
           </p>
         </section>
 

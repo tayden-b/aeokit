@@ -1,0 +1,26 @@
+app = "aeokit"
+primary_region = "iad"
+
+[build]
+
+[env]
+  AEOKIT_DATA_DIR = "/data"
+  PORT = "8080"
+  # Hard ceiling on what strangers can spend of yours, per UTC day.
+  AEOKIT_DAILY_USD_CAP = "5.00"
+  AEOKIT_FREE_PROBES_PER_CLIENT = "1"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[mounts]]
+  source = "aeokit_data"
+  destination = "/data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

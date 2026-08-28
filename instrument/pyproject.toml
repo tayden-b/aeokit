@@ -28,6 +28,7 @@ Source = "https://github.com/tayden-b/aeokit"
 
 [project.scripts]
 aeokit-mcp = "aeokit_mcp.cli:main"
+aeokit-hosted = "aeokit_mcp.hosted:main"
 
 [build-system]
 requires = ["hatchling"]

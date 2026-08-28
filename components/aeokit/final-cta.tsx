@@ -12,7 +12,7 @@ export function FinalCta() {
           <Button size="lg" className="h-12 rounded-full px-7 text-base" render={<a href="/setup">Add to your agent <ArrowRight data-icon="inline-end" /></a>} />
           <Button size="lg" variant="outline" className="h-12 rounded-full px-7 text-base" render={<a href="/setup">Read setup docs</a>} />
         </div>
-        <p className="mt-5 font-mono text-xs tracking-wide text-muted-foreground">MCP-first · your keys, at cost · open source</p>
+        <p className="mt-5 font-mono text-xs tracking-wide text-muted-foreground">No keys, no account · MCP-first · open source</p>
       </div>
     </section>
   )
