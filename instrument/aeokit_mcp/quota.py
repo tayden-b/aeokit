@@ -133,6 +133,16 @@ def settle(reservation_id: int, actual_usd: float) -> None:
     conn.close()
 
 
+def release(reservation_id: int) -> None:
+    """Delete a reservation outright — for probes that failed before delivering
+    anything. Settling at $0 would leave the row in place and still burn the
+    caller's free probe, which the failure message explicitly promises it won't."""
+    conn = _conn()
+    conn.execute("DELETE FROM reservations WHERE id = ?", (reservation_id,))
+    conn.commit()
+    conn.close()
+
+
 def status(client: str) -> dict:
     used = probes_used_by(client)
     return {

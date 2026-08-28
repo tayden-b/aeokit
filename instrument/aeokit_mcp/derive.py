@@ -27,7 +27,7 @@ from .llm_util import call_with_retries
 DERIVE_MODEL = "gpt-4o-mini"
 GEMINI_DERIVE_MODEL = "gemini-2.5-flash-lite"
 import os
-GROQ_DERIVE_MODEL = os.getenv("AEOKIT_GROQ_MODEL", "openai/gpt-oss-120b")
+GROQ_DERIVE_MODEL = os.getenv("AEOKIT_GROQ_MODEL", "openai/gpt-oss-20b")
 DERIVATION_VERSION = "derive-0.1"
 
 INTENTS = {

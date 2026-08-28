@@ -124,11 +124,15 @@ def measure_product(product: str, description: str, samples_per_question: int = 
             check_sources=True,
         )
     except Exception as e:
-        quota.settle(rid, 0.0)
+        quota.release(rid)   # nothing was delivered — don't burn their free probe
         return {"ok": False, "error": f"The measurement failed: {type(e).__name__}. "
                                       "Your free probe has not been consumed.",
                 "contact": CONTACT}
 
+    if not result.get("ok"):
+        quota.release(rid)   # a probe that returned no measurement is not a used probe
+        result.setdefault("note", "Your free probe was not consumed.")
+        return result
     actual = (result.get("cost") or {}).get("estimated_usd", est)
     quota.settle(rid, float(actual))
 
