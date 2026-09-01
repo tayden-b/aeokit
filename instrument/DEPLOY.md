@@ -77,8 +77,8 @@ fly certs add mcp.aeokit.ai      # then add the DNS record Fly prints
 
 | Control | Where | Default |
 |---|---|---|
-| Global daily cap | `AEOKIT_DAILY_USD_CAP` in fly.toml | $5.00/UTC day |
-| Free probes per client | `AEOKIT_FREE_PROBES_PER_CLIENT` | 1/day |
+| Global daily cap | `AEOKIT_DAILY_USD_CAP` in fly.toml | $2.00/UTC day |
+| Free probes per client | `AEOKIT_FREE_PROBES_PER_CLIENT` | 3/day |
 | Provider-side cap | OpenAI/Gemini dashboards | set these yourself |
 
 Raise or lower the cap live without redeploying:

@@ -1,7 +1,7 @@
 # flyctl launch added from .gitignore
 **/.venv
 **/.env
-**/marketmaker.db
+**/aeokit.db
 **/spend.db
 **/exports
 **/__pycache__

@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react'
 import { ArrowUpRight, Check, ChevronDown, Layers, Plus, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-const engines = ['ChatGPT', 'Gemini', 'Claude', 'Perplexity']
+const engines = ['ChatGPT', 'Gemini']
 const progress = [
-  ['Wrote 8 buyer questions for your category', 'project-management'],
-  ['Asked ChatGPT and Gemini, 3 times each', '48 live answers'],
+  ['Wrote 4 buyer questions for your category', 'project-management'],
+  ['Asked ChatGPT and Gemini, twice each', '16 live answers'],
   ['Found who they recommend', '11 products named'],
 ]
 
@@ -51,7 +51,7 @@ export function HeroSection() {
           <Button size="lg" className="rounded-full px-6" render={<a href="/setup">Add to your agent</a>} />
           <Button size="lg" variant="ghost" className="rounded-full px-5" render={<a href="#live-probe">See a live probe <ArrowUpRight data-icon="inline-end" /></a>} />
         </div>
-        <p className="mt-4 font-mono text-xs text-muted-foreground">One free test · then bring your own key · MCP-first</p>
+        <p className="mt-4 font-mono text-xs text-muted-foreground">Free to try · then bring your own key · MCP-first</p>
       </div>
 
       <div id="live-probe" className="mx-auto max-w-3xl px-4 pb-3">
@@ -70,9 +70,9 @@ export function HeroSection() {
               ))}
             </div>
             <div className="flex flex-col divide-y divide-border rounded-xl bg-muted/60 px-4">
-              {['You appear in 3 of 20 answers · ranked #6 of 11', 'ChatGPT: you’re #4 · Trello and Asana lead', 'Gemini: you’re never mentioned · Asana wins 8 of 10'].map((row) => <p key={row} className="py-3 text-sm font-medium">{row}</p>)}
+              {['You appear in 3 of 16 answers · ranked #6 of 11', 'ChatGPT: you’re #4 · Trello and Asana lead', 'Gemini: you’re never mentioned · Asana wins 7 of 8'].map((row) => <p key={row} className="py-3 text-sm font-medium">{row}</p>)}
             </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">Measured live just now, 48 answers · full report includes what they say about you and which sites drive it</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">Measured live just now, 16 answers · full report includes what they say about you and which sites drive it</p>
           </div>
           <div className="flex items-center gap-3 border-t border-border px-5 py-3.5 text-muted-foreground"><span className="flex-1 text-sm">Reply...</span><span className="text-xs">Live</span><span className="flex size-7 items-center justify-center rounded-full bg-brand text-brand-foreground"><Send className="size-3.5" /></span></div>
         </div>
@@ -83,9 +83,10 @@ export function HeroSection() {
         <p className="text-center font-mono text-[11px] tracking-[0.16em] text-muted-foreground">MEASURED LIVE, ON THE ENGINES YOUR BUYERS ACTUALLY USE</p>
         <div className="mx-auto mt-6 flex max-w-5xl flex-wrap justify-center gap-2 px-6">
           {engines.map((name) => <span key={name} className="rounded-full border border-border bg-background px-4 py-2 text-sm shadow-sm shadow-foreground/5">{name}</span>)}
+          <span className="rounded-full border border-dashed border-border px-4 py-2 text-sm text-muted-foreground">Claude · Perplexity (planned)</span>
           <span className="rounded-full border border-dashed border-border px-4 py-2 text-sm text-muted-foreground">Google AI Overviews (planned)</span>
           <span className="rounded-full bg-brand px-4 py-2 text-sm text-brand-foreground">one tool, any agent</span>
-          <span className="rounded-full border border-border bg-background px-4 py-2 text-sm">results in a few minutes</span>
+          <span className="rounded-full border border-border bg-background px-4 py-2 text-sm">results in about a minute</span>
         </div>
       </div>
     </section>

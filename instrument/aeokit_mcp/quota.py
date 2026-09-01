@@ -98,7 +98,8 @@ def reserve(client: str, estimated_usd: float, note: str = "") -> tuple[bool, st
     used = probes_used_by(client)
     if used >= FREE_PROBES_PER_CLIENT_PER_DAY:
         return False, (
-            f"You've used your {FREE_PROBES_PER_CLIENT_PER_DAY} free probe for today. "
+            f"You've used your {FREE_PROBES_PER_CLIENT_PER_DAY} free "
+            f"probe{'s' if FREE_PROBES_PER_CLIENT_PER_DAY != 1 else ''} for today. "
             f"aeokit runs measurements on real engine APIs, which cost real money, so free "
             f"usage is limited while this is in early access. Want more? Email {CONTACT} — "
             f"happy to open it up."

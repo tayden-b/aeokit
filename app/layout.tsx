@@ -16,7 +16,6 @@ export const metadata: Metadata = {
   title: 'aeokit.ai | Live answer-engine measurement for your agent',
   description:
     'An MCP-first tool that gives AI agents live, repeatable measurements of what answer engines recommend, who wins, and which sources shape the result.',
-  generator: 'v0.app',
   icons: {
     icon: [
       {

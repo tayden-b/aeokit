@@ -10,9 +10,9 @@ export function FinalCta() {
         <p className="mx-auto mt-5 max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground">Add aeokit as an MCP tool and ask your first question in the agent you already use. Nothing else to log into or learn.</p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Button size="lg" className="h-12 rounded-full px-7 text-base" render={<a href="/setup">Add to your agent <ArrowRight data-icon="inline-end" /></a>} />
-          <Button size="lg" variant="outline" className="h-12 rounded-full px-7 text-base" render={<a href="/setup">Read setup docs</a>} />
+          <Button size="lg" variant="outline" className="h-12 rounded-full px-7 text-base" render={<a href="/docs">Read the docs</a>} />
         </div>
-        <p className="mt-5 font-mono text-xs tracking-wide text-muted-foreground">One free test · bring your own key for unlimited · open source</p>
+        <p className="mt-5 font-mono text-xs tracking-wide text-muted-foreground">Free to try · bring your own key for unlimited · MIT-licensed source</p>
       </div>
     </section>
   )

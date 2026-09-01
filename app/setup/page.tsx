@@ -11,7 +11,7 @@ import { CopyBlock } from '@/components/aeokit/copy-block'
 export const metadata: Metadata = {
   title: 'Add aeokit to your agent',
   description:
-    'One free test, no keys. Then bring your own key for unlimited measurements.',
+    'Try it free with no keys, or bring your own key for unlimited measurements.',
 }
 
 const CLAUDE_CODE = `claude mcp add --transport http aeokit ${MCP_URL}`
@@ -60,7 +60,7 @@ export default function SetupPage() {
           <ul className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground">
             <li>
               <span className="font-medium text-foreground">Try it free.</span> Connect the hosted
-              URL below — no keys, no account — and run a free test measurement on us.
+              URL below — no keys, no account — and run free test measurements on us — a few per day.
             </li>
             <li>
               <span className="font-medium text-foreground">Bring your own key for unlimited.</span>{' '}
@@ -118,8 +118,10 @@ Settings → MCP → Add new global MCP server, then paste this into{' '}
           <h2 className="text-lg font-semibold">Then ask your agent this</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             Replace with your own product and who buys it. That&apos;s the whole interface. If
-            anything looks wrong, ask your agent to <code className="font-mono text-[13px]">status</code>{' '}
-            first — it reports how many free measurements you have left before anything runs.
+            anything looks wrong, ask your agent to run{' '}
+            <code className="font-mono text-[13px]">status</code> (hosted) or{' '}
+            <code className="font-mono text-[13px]">check_keys</code> (your own key) first —
+            both are instant and free.
           </p>
           <CopyBlock code={FIRST_ASK} />
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
@@ -132,7 +134,7 @@ Settings → MCP → Add new global MCP server, then paste this into{' '}
         <section className="mt-12">
           <h2 className="text-lg font-semibold">Why the free tier is small</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Every measurement puts dozens of real questions to real answer engines, which costs real
+            Every measurement puts real buyer questions to real answer engines, repeatedly, which costs real
             money — and on the hosted server, that money is ours. So the free tier is a taste: enough
             to see exactly what you get. When you want more, bring your own key above and it costs
             you cents, not a subscription.

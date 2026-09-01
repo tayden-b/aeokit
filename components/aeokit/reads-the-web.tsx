@@ -6,7 +6,7 @@ const steps = [
   { icon: SearchCheck, title: 'Your agent gets the evidence', body: 'Rankings, competitors, exact answer language, and the websites shaping those answers return to the conversation where you started.' },
 ]
 
-const engines = ['ChatGPT', 'Gemini', 'Claude', 'Perplexity']
+const engines = ['ChatGPT', 'Gemini']
 
 export function ReadsTheWeb() {
   return (
@@ -41,7 +41,7 @@ export function ReadsTheWeb() {
                   <div key={engine} className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2.5">
                     <span className="font-mono text-xs">{engine}</span>
                     <span className="flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
-                      {index === 0 ? '24 / 24' : index === 1 ? '24 / 24' : index === 2 ? '20 / 24' : '18 / 24'}
+                      {index === 0 ? '8 / 8' : '8 / 8'}
                       {index < 2 && <Check className="size-3.5 text-brand" aria-label="Complete" />}
                     </span>
                   </div>
@@ -57,7 +57,7 @@ export function ReadsTheWeb() {
               <div className="flex flex-col gap-3">
                 <div className="flex items-end justify-between gap-4 border-b border-border pb-3">
                   <span className="text-sm text-muted-foreground">Named in</span>
-                  <strong className="font-mono text-2xl font-medium tabular-nums">3 of 20</strong>
+                  <strong className="font-mono text-2xl font-medium tabular-nums">3 of 16</strong>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-xs text-muted-foreground">
                   <span>Rankings · citations · competitors</span>

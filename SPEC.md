@@ -42,7 +42,7 @@ A small hand-collected consumer-surface sample (~5 capabilities × 3 engines × 
 
 ## 8. Reproduction
 
-`make reproduce` regenerates every published number from raw sampled data. Raw data ships with the corpus. Gaps in the time series are marked, never backfilled.
+A `make reproduce` target that regenerates every published number from raw sampled data is planned; until it exists, numbers from this corpus are provisional. Raw data ships with the corpus. Gaps in the time series are marked, never backfilled.
 
 ## Prior art
 

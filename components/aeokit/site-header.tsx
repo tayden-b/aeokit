@@ -3,10 +3,10 @@ import { Button } from '@/components/ui/button'
 import { AEOKitLogo } from './brand-icons'
 
 const navLinks = [
-  { label: 'How it works', href: '#how-it-works' },
-  { label: 'MCP setup', href: '#add-to-agent' },
-  { label: 'Output', href: '#report' },
-  { label: 'API docs', href: '#' },
+  { label: 'How it works', href: '/#how-it-works' },
+  { label: 'Setup', href: '/setup' },
+  { label: 'Docs', href: '/docs' },
+  { label: 'API', href: '/api' },
 ]
 
 export function SiteHeader() {

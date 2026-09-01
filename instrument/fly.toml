@@ -8,9 +8,9 @@ primary_region = 'iad'
 
 [build]
 [env]
-  AEOKIT_DAILY_USD_CAP = '5.00'
+  AEOKIT_DAILY_USD_CAP = '2.00'
   AEOKIT_DATA_DIR = '/data'
-  AEOKIT_FREE_PROBES_PER_CLIENT = '1'
+  AEOKIT_FREE_PROBES_PER_CLIENT = '3'
   PORT = '8080'
 
 [[mounts]]

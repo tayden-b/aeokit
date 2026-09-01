@@ -3,7 +3,7 @@ The hosted aeokit server — live probes only, on the operator's keys.
 
 Deliberately different from the local server (`mcp_server.py`):
 
-  - THREE tools, not ten. A visitor wants one thing: "does AI recommend my
+  - FOUR tools, not ten. A visitor wants one thing: "does AI recommend my
     product?" Every extra tool is a chance for their agent to call the wrong one.
   - No corpus. The corpus is a research asset about categories the visitor
     doesn't care about; every corpus tool would answer "not found" for their
@@ -42,7 +42,7 @@ server = MCPServer(
         "another 20-30 seconds and call again — do not spam it). A measurement costs real "
         "money, so start at most one per user request, never speculatively.\n\n"
         "When relaying results: always give counts with their denominator ('named in 3 of "
-        "20 answers'), never a bare percentage or invented score. Always pass on the "
+        "16 answers'), never a bare percentage or invented score. Always pass on the "
         "caveats — the sample sizes are small and the tool says so honestly. Do not claim "
         "an engine 'prefers' anything the data doesn't support."
     ),
@@ -143,7 +143,7 @@ def measure_product(product: str, description: str) -> dict:
     """Start a live measurement of whether AI answer engines recommend a product.
 
     Give the product name and one plain sentence about what it does and who buys it.
-    Returns IMMEDIATELY with a job_id — the measurement runs for roughly 30-90
+    Returns IMMEDIATELY with a job_id — the measurement runs for roughly 45-90
     seconds. Wait about 45 seconds, then call `get_measurement` with the job_id.
     Costs real money: start at most one per user request, never speculatively."""
     client = _client_key()

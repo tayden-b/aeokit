@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 
 const query = 'how does Flowlane show up in AI search?'
 const offRows = ["One engine's guess about itself", 'No competitor comparison', 'No numbers, no sources, nothing to act on']
-const onRows = ['You appear in 3 of 20 answers · #6 of 11', 'Invisible on Gemini · Asana wins 8 of 10', 'The 5 sites shaping those answers ↓']
+const onRows = ['You appear in 3 of 16 answers · #6 of 11', 'Invisible on Gemini · Asana wins 7 of 8', 'The 5 sites shaping those answers ↓']
 
 export function LiveDataDemo() {
   const [live, setLive] = useState(true)
@@ -19,7 +19,7 @@ export function LiveDataDemo() {
   }
 
   return (
-    <section id="how-it-works" aria-label="The same agent, with measurement switched on." className="border-b border-border bg-background px-6 py-24">
+    <section id="demo" aria-label="The same agent, with measurement switched on." className="border-b border-border bg-background px-6 py-24">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">The same agent, with measurement switched on.</h2>
         <div className="mt-9 flex flex-col items-center gap-3">
@@ -44,7 +44,7 @@ export function LiveDataDemo() {
                   </div>
                 ))}
               </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">{live ? "Measured live: 8 buyer questions, 2 engines, 3 samples each — 48 answers. An AI can't tell you this about itself." : 'Measurement is off. Your agent is guessing.'}</p>
+              <p className="text-xs leading-relaxed text-muted-foreground">{live ? "Measured live: 4 buyer questions, 2 engines, 2 samples each — 16 answers. An AI can't tell you this about itself." : 'Nothing here is verifiable — no counts, no sources, no dates.'}</p>
             </div>
           </div>
         </div>
