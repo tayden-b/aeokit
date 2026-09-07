@@ -18,6 +18,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
+
 def _default_db_path() -> Path:
     """Corpus location. Env override first; otherwise a user data dir, because a
     pip/uvx-installed package must never write inside site-packages."""

@@ -45,7 +45,7 @@ def main() -> None:
     conn = db.connect()
     db.init_db(conn)
 
-    now = dt.datetime.now(dt.timezone.utc)
+    now = dt.datetime.now(dt.UTC)
     run_date = now.strftime("%Y-%m-%d")
     c = counts()
     print(f"spec {SPEC_VERSION} · prompts {PROMPT_SET_VERSION} "

@@ -22,6 +22,7 @@ import os
 import sqlite3
 from pathlib import Path
 
+
 def _ledger_path() -> Path:
     import os
 
@@ -86,7 +87,7 @@ def _conn() -> sqlite3.Connection:
 
 
 def calls_today(engine: str) -> int:
-    day = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d")
+    day = dt.datetime.now(dt.UTC).strftime("%Y-%m-%d")
     conn = _conn()
     row = conn.execute(
         "SELECT COALESCE(SUM(calls), 0) FROM spend WHERE day = ? AND engine = ?", (day, engine)
@@ -108,7 +109,7 @@ def estimate(engine: str, calls: int, judge_calls: int = 0) -> float:
 
 
 def record(source: str, engine: str, calls: int, est_usd: float, label: str = "") -> None:
-    now = dt.datetime.now(dt.timezone.utc)
+    now = dt.datetime.now(dt.UTC)
     conn = _conn()
     conn.execute(
         "INSERT INTO spend (ts, day, source, engine, calls, est_usd, label) VALUES (?,?,?,?,?,?,?)",
@@ -119,7 +120,7 @@ def record(source: str, engine: str, calls: int, est_usd: float, label: str = ""
 
 
 def house_spent_today() -> float:
-    day = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d")
+    day = dt.datetime.now(dt.UTC).strftime("%Y-%m-%d")
     conn = _conn()
     row = conn.execute(
         "SELECT COALESCE(SUM(est_usd), 0) FROM spend WHERE day = ? AND source = 'house'", (day,)

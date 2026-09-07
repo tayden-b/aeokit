@@ -63,7 +63,7 @@ def _conn() -> sqlite3.Connection:
 
 
 def _today() -> str:
-    return dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d")
+    return dt.datetime.now(dt.UTC).strftime("%Y-%m-%d")
 
 
 def client_id(raw: str | None) -> str:
@@ -116,7 +116,7 @@ def reserve(client: str, estimated_usd: float, note: str = "") -> tuple[bool, st
     conn = _conn()
     cur = conn.execute(
         "INSERT INTO reservations (ts, day, client, reserved_usd, note) VALUES (?,?,?,?,?)",
-        (dt.datetime.now(dt.timezone.utc).isoformat(), _today(), client, planned, note))
+        (dt.datetime.now(dt.UTC).isoformat(), _today(), client, planned, note))
     conn.commit()
     rid = cur.lastrowid
     conn.close()

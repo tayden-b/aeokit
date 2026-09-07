@@ -17,8 +17,6 @@ Differences from the hosted server (`hosted.py`), on purpose:
 
 from __future__ import annotations
 
-import os
-
 from mcp.server.mcpserver import MCPServer
 
 from . import keys, probe

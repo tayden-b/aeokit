@@ -24,7 +24,7 @@ import uuid
 
 from mcp.server.mcpserver import MCPServer
 
-from . import budget, keys, probe, quota
+from . import budget, keys, quota
 
 CONTACT = os.getenv("AEOKIT_CONTACT", "hello@aeokit.ai")
 

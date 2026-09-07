@@ -24,15 +24,17 @@ import uuid
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from . import budget
-from . import db
-from . import derive
-from . import keys
-from . import pagecheck
+from . import budget, db, derive, keys, pagecheck
 from .engines import ask
 from .extract import JUDGE_MODEL, JUDGE_VERSION, extract
 from .metrics import normalize
-from .stats import confidence_note, difference_is_real, diff_interval, min_n_for_width, wilson_interval
+from .stats import (
+    confidence_note,
+    diff_interval,
+    difference_is_real,
+    min_n_for_width,
+    wilson_interval,
+)
 
 PROBE_VERSION = "probe-0.1"
 
@@ -80,7 +82,7 @@ def run_probe(product: str, description: str, samples_per_question: int = 3,
 
     # 3. Sample
     session_id = uuid.uuid4().hex[:12]
-    now = dt.datetime.now(dt.timezone.utc)
+    now = dt.datetime.now(dt.UTC)
     conn = db.connect()
     db.init_db(conn)
 
@@ -189,8 +191,10 @@ def run_probe(product: str, description: str, samples_per_question: int = 3,
     for i in range(len(eng_names)):
         for j in range(i + 1, len(eng_names)):
             a, b = eng_names[i], eng_names[j]
-            ka = sum(1 for s in per_engine[a] if target in s); na = len(per_engine[a])
-            kb = sum(1 for s in per_engine[b] if target in s); nb = len(per_engine[b])
+            ka = sum(1 for s in per_engine[a] if target in s)
+            na = len(per_engine[a])
+            kb = sum(1 for s in per_engine[b] if target in s)
+            nb = len(per_engine[b])
             if difference_is_real(ka, na, kb, nb):
                 lo, hi = diff_interval(ka, na, kb, nb)
                 differences.append({

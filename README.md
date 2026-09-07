@@ -1,5 +1,10 @@
 # aeokit
 
+[![CI](https://github.com/tayden-b/aeokit/actions/workflows/ci.yml/badge.svg)](https://github.com/tayden-b/aeokit/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/aeokit-mcp)](https://pypi.org/project/aeokit-mcp/)
+[![Python](https://img.shields.io/pypi/pyversions/aeokit-mcp)](https://pypi.org/project/aeokit-mcp/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+
 **Find out whether AI answer engines recommend your product.**
 
 People increasingly ask ChatGPT or Gemini what to buy instead of searching. When they do, the engine names specific products — and if you make one, you have no visibility into whether it names yours. aeokit measures that: it derives the questions your buyers would ask, puts them to the real engines repeatedly with web search grounding, and reports where you stand — as counts with confidence intervals, never a score.
@@ -35,6 +40,23 @@ Keys are read only from the server environment, never accepted as tool arguments
 
 Statistical rules the code enforces: every rate ships with its denominator and a 95% Wilson interval; cross-engine differences are only reported when the interval on the difference excludes zero; no composite scores; no sentiment (the judge produces almost no negatives, so the field would be decoration); failed measurements refund the caller's quota.
 
+## Architecture
+
+```mermaid
+flowchart LR
+    A[Your agent<br/>Claude · Cursor · ChatGPT] -- MCP --> S{aeokit server}
+    S -- hosted --> H[Fly.io<br/>operator keys · quota]
+    S -- local --> L[uvx aeokit-mcp<br/>your keys · no quota]
+    H & L --> P[probe subprocess]
+    P --> D[derive buyer questions]
+    D --> E[sample engines<br/>OpenAI · Gemini<br/>search-grounded]
+    E --> J[judge: extract<br/>recommended products]
+    E --> C[fetch cited pages<br/>SSRF-guarded]
+    J & C --> R[report<br/>counts · Wilson CIs<br/>significance-gated diffs<br/>URL-anchored actions]
+```
+
+The site is documentation only; it never sits in the measurement path.
+
 ## MCP surface
 
 | Server | Tools | Flow |
@@ -54,6 +76,16 @@ Full tool reference: [aeokit.vercel.app/api](https://aeokit.vercel.app/api) · M
 | `instrument/DEPLOY.md` | Runbook for the hosted server (Fly.io), including spend controls and the kill switch |
 | `SPEC.md` | The measurement methodology, versioned and honest about its open TODOs |
 
+## Testing
+
+The test suite covers the parts that carry the product's honesty claims — the statistics, quota accounting, budget estimation, the product-name filter, the URL safety boundary, and retry classification — and runs fully offline in under a second:
+
+```bash
+make test     # or: cd instrument && .venv/bin/pytest
+make lint
+make check    # lint + test + site build, same as CI
+```
+
 ## Developing
 
 ```bash
@@ -67,6 +99,13 @@ python3 -m venv .venv && .venv/bin/pip install -e .
 ```
 
 Provide at least one engine key in `instrument/.env` (`OPENAI_API_KEY` or `GEMINI_API_KEY`) for local runs.
+
+## Project
+
+- [`CHANGELOG.md`](./CHANGELOG.md) — what changed in each release
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) — ground rules and setup
+- [`SECURITY.md`](./SECURITY.md) — what the design defends against, and how to report a problem
+- [`SPEC.md`](./SPEC.md) — the measurement methodology
 
 ## License
 

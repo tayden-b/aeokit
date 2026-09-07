@@ -105,12 +105,21 @@ def check_page(url: str, names: list[str]) -> PageCheck:
         return PageCheck(url, domain, False, error=f"skipped: {e}")
     except (urllib.error.URLError, urllib.error.HTTPError, OSError, ValueError) as e:
         return PageCheck(url, domain, False, error=f"fetch failed: {type(e).__name__}")
+    title, found = names_in_html(html, names)
+    return PageCheck(url, domain, True, names_found=found, title=title)
+
+
+def names_in_html(html: str, names: list[str]) -> tuple[str, list[str]]:
+    """Return (page title, subset of `names` present in the page's visible text).
+
+    Script and style bodies are stripped first so a competitor's name inside an
+    analytics snippet does not count as the page naming them."""
     title_m = _TITLE.search(html)
     title = re.sub(r"\s+", " ", title_m.group(1)).strip()[:120] if title_m else ""
     text = _TAG.sub(" ", html)
     text = re.sub(r"<[^>]+>", " ", text).lower()
     found = [n for n in names if n.strip() and n.strip().lower() in text]
-    return PageCheck(url, domain, True, names_found=found, title=title)
+    return title, found
 
 
 def check_pages(urls: list[str], names: list[str], limit: int = 8,

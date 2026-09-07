@@ -17,6 +17,7 @@ Volumes) know what people actually ask; we infer it. Every probe result says so.
 
 from __future__ import annotations
 
+import os
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -26,7 +27,6 @@ from .llm_util import call_with_retries
 
 DERIVE_MODEL = "gpt-4o-mini"
 GEMINI_DERIVE_MODEL = "gemini-2.5-flash-lite"
-import os
 GROQ_DERIVE_MODEL = os.getenv("AEOKIT_GROQ_MODEL", "openai/gpt-oss-20b")
 DERIVATION_VERSION = "derive-0.1"
 
@@ -141,10 +141,20 @@ def derive_questions(product: str, description: str, n: int = 8) -> DerivedSet:
             "Question derivation needs an OpenAI or Gemini key. Add one to your MCP "
             "server config as AEOKIT_USER_OPENAI_API_KEY or AEOKIT_USER_GEMINI_API_KEY."
         )
-    # enforce the hard rule mechanically — the model is not trusted to obey it
-    needle = product.strip().lower()
-    result.questions = [q for q in result.questions if needle not in q.question.lower()]
+    result.questions = strip_self_references(result.questions, product)
     return result
+
+
+def strip_self_references(questions: list[DerivedQuestion], product: str) -> list[DerivedQuestion]:
+    """Drop any question that names the product being measured.
+
+    The model is instructed not to, but it is not trusted to: a question that
+    names the product measures recognition, not recommendation, and one leaking
+    through would silently corrupt the whole run."""
+    needle = product.strip().lower()
+    if not needle:
+        return list(questions)
+    return [q for q in questions if needle not in q.question.lower()]
 
 
 DERIVATION_CAVEAT = (

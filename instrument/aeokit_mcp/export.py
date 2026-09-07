@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from . import db
@@ -100,7 +100,7 @@ def export() -> Path:
     ).fetchall())
 
     payload = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "latest_date": latest,
         "dates": dates,
         "engines": engines_present,

@@ -268,7 +268,7 @@ def question_ranking(capability: str, engine: str | None = None) -> dict:
         return {"found": False, "asked_for": capability, "close_matches": suggestions,
                 "advice": "Not measured yet — see `coverage` for what is, or `request_measurement`."}
     result, leaders, caveats = {}, {}, set()
-    for (cat, cap, eng), rows in _latest_shares(conn, match).items():
+    for (_cat, _cap, eng), rows in _latest_shares(conn, match).items():
         if engine and eng != engine:
             continue
         views = [_row_view(r) for r in rows[:8]]
@@ -351,7 +351,7 @@ def request_measurement(target: str, context: str = "") -> dict:
     Be specific: the product/category name plus what the requester wants to learn."""
     QUEUE_PATH.parent.mkdir(parents=True, exist_ok=True)
     entry = {
-        "ts": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "ts": dt.datetime.now(dt.UTC).isoformat(),
         "target": target.strip(),
         "context": context.strip(),
     }
@@ -380,7 +380,7 @@ def compare(product_a: str, product_b: str) -> dict:
                 "missing": [{"asked_for": p, "close_matches": s} for p, m, s in
                             [(product_a, a, sug_a), (product_b, b, sug_b)] if not m]}
     rows_out, a_wins, b_wins = [], 0, 0
-    for (cat, capability, engine), rows in sorted(_latest_shares(conn).items()):
+    for (_cat, capability, engine), rows in sorted(_latest_shares(conn).items()):
         if engine == "blended":
             continue
         ra = next((i + 1 for i, r in enumerate(rows) if r["product"] == a), None)
